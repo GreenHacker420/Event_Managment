@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { useAppStore } from "../../store/useAppStore";
+import { toast } from "sonner";
 
 interface CompleteProfileModalProps {
     isOpen: boolean;
@@ -9,19 +10,25 @@ interface CompleteProfileModalProps {
 }
 
 export const CompleteProfileModal = ({ isOpen, onClose }: CompleteProfileModalProps) => {
-    const { updateProfile } = useAppStore();
+    const { user, setUser } = useAppStore();
     const [formData, setFormData] = useState({
-        role: "",
-        company: "",
-        phone: "",
+        name: user?.name || "",
         bio: "",
         location: ""
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        updateProfile(formData);
-        onClose();
+        try {
+            // Update user name in store
+            if (user) {
+                setUser({ ...user, name: formData.name });
+            }
+            toast.success("Profile updated!");
+            onClose();
+        } catch (error) {
+            toast.error("Failed to update profile");
+        }
     };
 
     return (
@@ -50,25 +57,14 @@ export const CompleteProfileModal = ({ isOpen, onClose }: CompleteProfileModalPr
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <label className="block font-hand text-lg mb-1">Role / Title</label>
+                                <label className="block font-hand text-lg mb-1">Display Name</label>
                                 <input
                                     type="text"
                                     required
                                     className="w-full p-3 bg-white border-2 border-[var(--color-ink)] rounded-lg focus:outline-none focus:shadow-[4px_4px_0px_var(--color-ink)] transition-shadow"
-                                    value={formData.role}
-                                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                                    placeholder="e.g. Event Planner"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block font-hand text-lg mb-1">Company</label>
-                                <input
-                                    type="text"
-                                    className="w-full p-3 bg-white border-2 border-[var(--color-ink)] rounded-lg focus:outline-none focus:shadow-[4px_4px_0px_var(--color-ink)] transition-shadow"
-                                    value={formData.company}
-                                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                                    placeholder="e.g. Dream Events Co."
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    placeholder="Your name"
                                 />
                             </div>
 

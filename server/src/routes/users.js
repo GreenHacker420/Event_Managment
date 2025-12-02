@@ -2,8 +2,50 @@ import { Hono } from 'hono';
 import { verifyAuth } from '@hono/auth-js';
 import { getDb, schema } from '../db/index.js';
 import { eq } from 'drizzle-orm';
+import bcrypt from 'bcryptjs';
 
 const users = new Hono();
+
+// Register new user with email/password
+users.post('/register', async (c) => {
+    try {
+        const body = await c.req.json();
+        const { name, email, password } = body;
+
+        if (!email || !password) {
+            return c.json({ error: 'Email and password are required' }, 400);
+        }
+
+        if (password.length < 6) {
+            return c.json({ error: 'Password must be at least 6 characters' }, 400);
+        }
+
+        const db = await getDb();
+
+        // Check if user already exists
+        const existingUser = await db.select().from(schema.users).where(eq(schema.users.email, email));
+        if (existingUser.length > 0) {
+            return c.json({ error: 'User with this email already exists' }, 400);
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create user
+        const newUser = {
+            name: name || email.split('@')[0],
+            email,
+            password: hashedPassword,
+        };
+
+        await db.insert(schema.users).values(newUser);
+
+        return c.json({ message: 'User registered successfully' }, 201);
+    } catch (error) {
+        console.error('Registration error:', error);
+        return c.json({ error: 'Failed to register user' }, 500);
+    }
+});
 
 // Get current user profile
 users.get('/me', verifyAuth(), async (c) => {

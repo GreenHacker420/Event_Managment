@@ -1,28 +1,85 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "../../store/useAppStore";
-import { Sparkles, Calendar, Users, CheckSquare, ArrowRight } from "lucide-react";
+import { Sparkles, Calendar, Users, CheckSquare, ArrowRight, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export const LoginSignupView = () => {
     const [isLogin, setIsLogin] = useState(true);
-    const [username, setUsername] = useState("");
+    const [name, setName] = useState("");
     const [password, setPassword] = useState("");
     const [email, setEmail] = useState("");
-    const { login } = useAppStore();
+    const [isLoading, setIsLoading] = useState(false);
+    const { loginAsGuest, checkSession } = useAppStore();
 
     const [csrfToken, setCsrfToken] = useState("");
 
     useEffect(() => {
-        fetch("http://localhost:3000/api/auth/csrf")
+        fetch("/api/auth/csrf", { credentials: 'include' })
             .then(res => res.json())
             .then(data => setCsrfToken(data.csrfToken))
             .catch(err => console.error("Failed to fetch CSRF token", err));
     }, []);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (username.trim()) {
-            login(username);
+        
+        if (!email || !password) {
+            toast.error("Please fill in all fields");
+            return;
+        }
+
+        if (password.length < 6) {
+            toast.error("Password must be at least 6 characters");
+            return;
+        }
+
+        setIsLoading(true);
+
+        try {
+            if (isLogin) {
+                // Login with credentials
+                const res = await fetch("/api/auth/callback/credentials", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: new URLSearchParams({
+                        email,
+                        password,
+                        csrfToken,
+                        callbackUrl: window.location.origin,
+                    }),
+                    credentials: "include",
+                });
+
+                if (res.ok) {
+                    await checkSession();
+                    toast.success("Welcome back!");
+                } else {
+                    toast.error("Invalid email or password");
+                }
+            } else {
+                // Register new user
+                const res = await fetch("/api/users/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, email, password }),
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    toast.success("Account created! Please sign in.");
+                    setIsLogin(true);
+                    setPassword("");
+                } else {
+                    toast.error(data.error || "Registration failed");
+                }
+            }
+        } catch (error) {
+            console.error("Auth error:", error);
+            toast.error("Something went wrong. Please try again.");
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -135,33 +192,34 @@ export const LoginSignupView = () => {
                                     onSubmit={handleSubmit}
                                     className="space-y-5"
                                 >
-                                    <div>
-                                        <label className="block font-hand text-sm text-[var(--color-ink)]/60 mb-2">Username</label>
-                                        <input
-                                            type="text"
-                                            value={username}
-                                            onChange={(e) => setUsername(e.target.value)}
-                                            className="w-full bg-[var(--color-surface)] border-2 border-[var(--color-ink)]/20 rounded-xl py-3 px-4 focus:outline-none focus:border-[var(--color-ink)] transition-colors font-serif text-lg"
-                                            placeholder="Your name"
-                                        />
-                                    </div>
-
                                     {!isLogin && (
                                         <motion.div
                                             initial={{ opacity: 0, height: 0 }}
                                             animate={{ opacity: 1, height: "auto" }}
                                             exit={{ opacity: 0, height: 0 }}
                                         >
-                                            <label className="block font-hand text-sm text-[var(--color-ink)]/60 mb-2">Email</label>
+                                            <label className="block font-hand text-sm text-[var(--color-ink)]/60 mb-2">Name</label>
                                             <input
-                                                type="email"
-                                                value={email}
-                                                onChange={(e) => setEmail(e.target.value)}
+                                                type="text"
+                                                value={name}
+                                                onChange={(e) => setName(e.target.value)}
                                                 className="w-full bg-[var(--color-surface)] border-2 border-[var(--color-ink)]/20 rounded-xl py-3 px-4 focus:outline-none focus:border-[var(--color-ink)] transition-colors font-serif text-lg"
-                                                placeholder="you@example.com"
+                                                placeholder="Your name"
                                             />
                                         </motion.div>
                                     )}
+
+                                    <div>
+                                        <label className="block font-hand text-sm text-[var(--color-ink)]/60 mb-2">Email</label>
+                                        <input
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            className="w-full bg-[var(--color-surface)] border-2 border-[var(--color-ink)]/20 rounded-xl py-3 px-4 focus:outline-none focus:border-[var(--color-ink)] transition-colors font-serif text-lg"
+                                            placeholder="you@example.com"
+                                            required
+                                        />
+                                    </div>
 
                                     <div>
                                         <label className="block font-hand text-sm text-[var(--color-ink)]/60 mb-2">Password</label>
@@ -171,6 +229,8 @@ export const LoginSignupView = () => {
                                             onChange={(e) => setPassword(e.target.value)}
                                             className="w-full bg-[var(--color-surface)] border-2 border-[var(--color-ink)]/20 rounded-xl py-3 px-4 focus:outline-none focus:border-[var(--color-ink)] transition-colors font-serif text-lg"
                                             placeholder="••••••••"
+                                            required
+                                            minLength={6}
                                         />
                                     </div>
 
@@ -186,10 +246,17 @@ export const LoginSignupView = () => {
                                         whileHover={{ scale: 1.02, x: 5 }}
                                         whileTap={{ scale: 0.98 }}
                                         type="submit"
-                                        className="w-full bg-[var(--color-ink)] text-white font-serif font-bold py-4 text-lg rounded-xl flex items-center justify-center gap-2 group"
+                                        disabled={isLoading}
+                                        className="w-full bg-[var(--color-ink)] text-white font-serif font-bold py-4 text-lg rounded-xl flex items-center justify-center gap-2 group disabled:opacity-50"
                                     >
-                                        {isLogin ? "Let's Go" : "Create Account"}
-                                        <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                                        {isLoading ? (
+                                            <Loader2 size={20} className="animate-spin" />
+                                        ) : (
+                                            <>
+                                                {isLogin ? "Sign In" : "Create Account"}
+                                                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                                            </>
+                                        )}
                                     </motion.button>
                                 </motion.form>
                             </AnimatePresence>
@@ -197,7 +264,7 @@ export const LoginSignupView = () => {
                             <div className="mt-8 pt-6 border-t-2 border-dashed border-[var(--color-ink)]/20">
                                 <p className="text-center font-hand text-sm text-[var(--color-ink)]/50 mb-4">Or continue with</p>
                                 <form
-                                    action="http://localhost:3000/api/auth/signin/google"
+                                    action="/api/auth/signin/google"
                                     method="POST"
                                 >
                                     <input type="hidden" name="csrfToken" value={csrfToken} />
@@ -217,7 +284,7 @@ export const LoginSignupView = () => {
                                 </form>
                                 <button
                                     type="button"
-                                    onClick={() => login('Guest')}
+                                    onClick={() => loginAsGuest('Guest')}
                                     className="w-full mt-3 py-3 text-[var(--color-ink)]/60 font-hand hover:text-[var(--color-ink)] transition-colors"
                                 >
                                     Continue as Guest →

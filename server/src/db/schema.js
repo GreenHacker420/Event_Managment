@@ -22,6 +22,7 @@ export const users = mysqlTable("user", {
         fsp: 3,
     }),
     image: varchar("image", { length: 255 }),
+    password: varchar("password", { length: 255 }), // Hashed password for email/password auth
     createdAt: timestamp("createdAt").defaultNow(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
 })

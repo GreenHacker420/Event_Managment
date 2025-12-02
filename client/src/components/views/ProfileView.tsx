@@ -7,19 +7,19 @@ import { toast } from "sonner";
 
 export const ProfileView = () => {
     const navigate = useNavigate();
-    const { user, login } = useAppStore();
+    const { user, setUser } = useAppStore();
     const [name, setName] = useState(user?.name || "");
-    const [email, setEmail] = useState("");
+    const [email, setEmail] = useState(user?.email || "");
     const [phone, setPhone] = useState("");
     const [location, setLocation] = useState("");
     const [bio, setBio] = useState("");
     const [role, setRole] = useState("organizer");
     const [notifications, setNotifications] = useState(true);
-    const [avatar, setAvatar] = useState<string | null>(null);
+    const [avatar, setAvatar] = useState<string | null>(user?.image || null);
 
     const handleSave = () => {
-        if (name.trim()) {
-            login(name);
+        if (name.trim() && user) {
+            setUser({ ...user, name });
             toast.success("Profile updated successfully!");
         }
     };

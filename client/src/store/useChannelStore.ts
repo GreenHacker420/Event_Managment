@@ -65,11 +65,8 @@ export const useChannelStore = create<ChannelState>((set) => ({
 
     addSubgroup: async (channelId: string, subgroup: any) => {
         try {
-            const response = await fetch(`/api/events/${channelId}/subgroups`, { // Note: Route might need adjustment if nested under events in a specific way, but we defined it as /:channelId/subgroups in events.js which is mounted at /api/events... wait.
-                // In events.js: events.post('/:channelId/subgroups', ...)
-                // And events is mounted at /api/events
-                // So the URL is /api/events/:channelId/subgroups. 
-                // This is a bit weird REST-wise (usually /api/channels/:id/subgroups), but it works for now.
+            // Route: /api/events/channels/:channelId/subgroups
+            const response = await fetch(`/api/events/channels/${channelId}/subgroups`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(subgroup)
