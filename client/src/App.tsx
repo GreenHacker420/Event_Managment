@@ -11,30 +11,23 @@ import { ChannelList } from "./components/views/channels/ChannelList";
 import { ChannelView } from "./components/views/channels/ChannelView";
 import { LoginSignupView } from "./components/views/LoginSignupView";
 import { ProfileView } from "./components/views/ProfileView";
+import { ExpenseView } from "./components/views/ExpenseView";
 import { UserMenu } from "./components/ui/UserMenu";
 import { useAppStore } from "./store/useAppStore";
 import "./App.css";
 
 function App() {
-  const { isAuthenticated, login } = useAppStore();
+  const { isAuthenticated, checkSession } = useAppStore();
   const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
 
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const res = await fetch('http://localhost:3000/api/auth/session', { credentials: 'include' });
-        const session = await res.json();
-        if (session?.user?.name || session?.user?.email) {
-          login(session.user.name || session.user.email);
-        }
-      } catch (e) {
-        console.log('No session');
-      }
+    const initApp = async () => {
+      await checkSession();
       setTimeout(() => setIsLoading(false), 1500);
     };
-    checkSession();
-  }, [login]);
+    initApp();
+  }, [checkSession]);
 
   return (
     <div className="min-h-screen bg-[var(--color-paper)] text-[var(--color-ink)] overflow-hidden selection:bg-[var(--color-highlight)]">
