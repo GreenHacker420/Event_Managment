@@ -40,7 +40,7 @@ export const sendMessage = (data: {
     eventId: string;
     channelId?: string;
     content: string;
-    user: { id: string; name: string; image?: string };
+    user: { id: string; name: string; email?: string; image?: string };
 }) => {
     const s = getSocket();
     s.emit('send-message', data);

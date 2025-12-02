@@ -20,27 +20,51 @@ export const setupSocketHandlers = (io) => {
             try {
                 const db = await getDb();
                 
-                let userId = user.id;
+                // First, find user by email (most reliable)
+                let userId = null;
+                
                 if (user.email) {
-                    const existingUser = await db.select({ id: schema.users.id })
+                    const existingUsers = await db.select({ id: schema.users.id })
                         .from(schema.users)
                         .where(eq(schema.users.email, user.email));
                     
-                    if (existingUser.length > 0) {
-                        userId = existingUser[0].id;
-                    } else if (user.id) {
-                        await db.insert(schema.users).values({
-                            id: user.id,
-                            email: user.email,
-                            name: user.name,
-                            image: user.image,
-                        }).onDuplicateKeyUpdate({ set: { name: user.name } });
+                    if (existingUsers.length > 0) {
+                        userId = existingUsers[0].id;
+                    } else {
+                        // User doesn't exist, create them
+                        const newUserId = user.id || crypto.randomUUID();
+                        try {
+                            await db.insert(schema.users).values({
+                                id: newUserId,
+                                email: user.email,
+                                name: user.name || user.email.split('@')[0],
+                                image: user.image || null,
+                            });
+                            userId = newUserId;
+                        } catch (insertError) {
+                            // If insert fails (duplicate), try to fetch again
+                            const retryUsers = await db.select({ id: schema.users.id })
+                                .from(schema.users)
+                                .where(eq(schema.users.email, user.email));
+                            if (retryUsers.length > 0) {
+                                userId = retryUsers[0].id;
+                            }
+                        }
+                    }
+                } else if (user.id) {
+                    // No email, check if user.id exists
+                    const existingById = await db.select({ id: schema.users.id })
+                        .from(schema.users)
+                        .where(eq(schema.users.id, user.id));
+                    
+                    if (existingById.length > 0) {
                         userId = user.id;
                     }
                 }
 
                 if (!userId) {
-                    socket.emit('message-error', { error: 'User not found' });
+                    console.error('Could not find or create user:', user);
+                    socket.emit('message-error', { error: 'User not found. Please log in again.' });
                     return;
                 }
 

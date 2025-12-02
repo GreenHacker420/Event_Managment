@@ -73,7 +73,12 @@ export function GroupChatView() {
       eventId: activeEventId,
       channelId: selectedTeam,
       content: inputText.trim(),
-      user: { id: user.id || '', name: user.name || '', image: user.image },
+      user: { 
+        id: user.id || '', 
+        name: user.name || '', 
+        email: user.email || '',
+        image: user.image 
+      },
     });
     setInputText("");
   }, [inputText, selectedTeam, activeEventId, user]);

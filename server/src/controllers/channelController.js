@@ -136,6 +136,25 @@ export const createSubgroup = async (c) => {
     }
 };
 
+export const updateSubgroup = async (c) => {
+    const id = c.req.param('id');
+    try {
+        const body = await c.req.json();
+        const { name, members } = body;
+
+        const db = await getDb();
+        const updateData = {};
+        if (name) updateData.name = name;
+        if (members !== undefined) updateData.members = members;
+
+        await db.update(schema.subgroups).set(updateData).where(eq(schema.subgroups.id, id));
+        return c.json({ message: 'Subgroup updated' });
+    } catch (error) {
+        console.error('Error updating subgroup:', error);
+        return c.json({ error: 'Failed to update subgroup' }, 500);
+    }
+};
+
 export const deleteSubgroup = async (c) => {
     const id = c.req.param('id');
     try {

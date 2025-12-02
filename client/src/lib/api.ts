@@ -26,6 +26,7 @@ export const channelsApi = {
 
 export const subgroupsApi = {
     create: (channelId: string, data: any) => api.post(`/events/channels/${channelId}/subgroups`, data).then((res) => res.data),
+    update: (id: string, data: any) => api.put(`/events/subgroups/${id}`, data).then((res) => res.data),
     delete: (id: string) => api.delete(`/events/subgroups/${id}`).then((res) => res.data),
 };
 

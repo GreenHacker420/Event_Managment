@@ -31,6 +31,7 @@ events.delete('/channels/:id', channelController.deleteChannel);
 
 // Subgroups
 events.post('/channels/:channelId/subgroups', channelController.createSubgroup);
+events.put('/subgroups/:id', channelController.updateSubgroup);
 events.delete('/subgroups/:id', channelController.deleteSubgroup);
 
 // Expenses

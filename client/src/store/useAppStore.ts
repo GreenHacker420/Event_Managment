@@ -52,20 +52,36 @@ export const useAppStore = create<AppState>()(
             
             logout: async () => {
                 const { isGuest } = get();
+                set({ isAuthenticated: false, user: null, activeEventId: null, isGuest: false });
+                
                 if (!isGuest) {
-                    // Call server logout for OAuth users
                     try {
-                        await fetch('/api/auth/signout', { 
-                            method: 'POST',
-                            credentials: 'include',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ csrfToken: '' }) // Will be handled by auth.js
-                        });
+                        const res = await fetch('/api/auth/csrf', { credentials: 'include' });
+                        const data = await res.json();
+                        
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = '/api/auth/signout';
+                        
+                        const csrfInput = document.createElement('input');
+                        csrfInput.type = 'hidden';
+                        csrfInput.name = 'csrfToken';
+                        csrfInput.value = data.csrfToken;
+                        form.appendChild(csrfInput);
+                        
+                        const callbackInput = document.createElement('input');
+                        callbackInput.type = 'hidden';
+                        callbackInput.name = 'callbackUrl';
+                        callbackInput.value = window.location.origin;
+                        form.appendChild(callbackInput);
+                        
+                        document.body.appendChild(form);
+                        form.submit();
                     } catch (e) {
                         console.error('Logout error:', e);
+                        window.location.href = '/';
                     }
                 }
-                set({ isAuthenticated: false, user: null, activeEventId: null, isGuest: false });
             },
             
             setActiveEventId: (id) => set({ activeEventId: id }),

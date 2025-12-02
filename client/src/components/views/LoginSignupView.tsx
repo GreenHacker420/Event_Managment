@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "../../store/useAppStore";
 import { Sparkles, Calendar, Users, CheckSquare, ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useSearchParams } from "react-router-dom";
 
 export const LoginSignupView = () => {
     const [isLogin, setIsLogin] = useState(true);
@@ -11,8 +12,25 @@ export const LoginSignupView = () => {
     const [email, setEmail] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const { loginAsGuest, checkSession } = useAppStore();
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const [csrfToken, setCsrfToken] = useState("");
+
+    useEffect(() => {
+        // Check for auth errors in URL
+        const error = searchParams.get('error');
+        if (error) {
+            if (error === 'OAuthAccountNotLinked') {
+                toast.error("This email is already registered. Please sign in with your password.");
+            } else if (error === 'signin' || error === 'auth') {
+                toast.error("Authentication failed. Please try again.");
+            } else {
+                toast.error(`Authentication error: ${error}`);
+            }
+            // Clear the error from URL
+            setSearchParams({});
+        }
+    }, [searchParams, setSearchParams]);
 
     useEffect(() => {
         fetch("/api/auth/csrf", { credentials: 'include' })
@@ -21,25 +39,25 @@ export const LoginSignupView = () => {
             .catch(err => console.error("Failed to fetch CSRF token", err));
     }, []);
 
-    const handleGoogleSignIn = async () => {
-        try {
-            const res = await fetch("/api/auth/signin/google", {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: new URLSearchParams({
-                    csrfToken,
-                    callbackUrl: window.location.origin,
-                }),
-                credentials: "include",
-            });
-            
-            const data = await res.json();
-            if (data.url) {
-                window.location.href = data.url;
-            }
-        } catch (error) {
-            toast.error("Failed to initiate Google sign-in");
-        }
+    const handleGoogleSignIn = () => {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/api/auth/signin/google';
+        
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfToken';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+        
+        const callbackInput = document.createElement('input');
+        callbackInput.type = 'hidden';
+        callbackInput.name = 'callbackUrl';
+        callbackInput.value = window.location.origin;
+        form.appendChild(callbackInput);
+        
+        document.body.appendChild(form);
+        form.submit();
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -59,8 +77,8 @@ export const LoginSignupView = () => {
 
         try {
             if (isLogin) {
-                // Login with credentials
-                const res = await fetch("/api/auth/callback/credentials", {
+                // Login with credentials - use signin endpoint
+                const res = await fetch("/api/auth/signin/credentials", {
                     method: "POST",
                     headers: { "Content-Type": "application/x-www-form-urlencoded" },
                     body: new URLSearchParams({
@@ -68,15 +86,22 @@ export const LoginSignupView = () => {
                         password,
                         csrfToken,
                         callbackUrl: window.location.origin,
+                        redirect: "false",
                     }),
                     credentials: "include",
                 });
 
-                if (res.ok) {
+                const data = await res.json();
+                
+                if (data.error) {
+                    toast.error(data.error || "Invalid email or password");
+                } else if (data.url) {
+                    // Successful login - check session
                     await checkSession();
                     toast.success("Welcome back!");
                 } else {
-                    toast.error("Invalid email or password");
+                    await checkSession();
+                    toast.success("Welcome back!");
                 }
             } else {
                 // Register new user
