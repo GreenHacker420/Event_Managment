@@ -5,7 +5,6 @@ import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import { authHandler, initAuthConfig, verifyAuth } from '@hono/auth-js'
 import Google from '@auth/core/providers/google'
-import GitHub from '@auth/core/providers/github'
 import { DrizzleAdapter } from '@auth/drizzle-adapter'
 import { getDb } from './src/db/index.js'
 import events from './src/routes/events.js'
@@ -25,10 +24,6 @@ app.use('*', initAuthConfig((c) => ({
         Google({
             clientId: process.env.GOOGLE_ID,
             clientSecret: process.env.GOOGLE_SECRET,
-        }),
-        GitHub({
-            clientId: process.env.GITHUB_ID,
-            clientSecret: process.env.GITHUB_SECRET,
         }),
     ],
     adapter: DrizzleAdapter(db),
