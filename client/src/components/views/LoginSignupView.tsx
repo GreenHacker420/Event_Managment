@@ -191,7 +191,7 @@ export const LoginSignupView = () => {
                                 <p className="text-center font-hand text-sm text-[var(--color-ink)]/50 mb-4">Or continue with</p>
                                 <button 
                                     type="button"
-                                    onClick={() => window.location.href = 'http://localhost:3000/api/auth/signin/google'}
+                                    onClick={() => window.location.href = 'http://localhost:3000/api/auth/signin?callbackUrl=http://localhost:5173'}
                                     className="w-full py-3 border-2 border-[var(--color-ink)]/20 rounded-xl font-serif hover:border-[var(--color-ink)] hover:shadow-[2px_2px_0px_var(--color-ink)] transition-all flex items-center justify-center gap-2"
                                 >
                                     <svg className="w-5 h-5" viewBox="0 0 24 24">
