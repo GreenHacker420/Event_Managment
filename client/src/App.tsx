@@ -81,7 +81,7 @@ function App() {
                     <GroupChatView />
                   </PageWrapper>
                 } />
-                <Route path="/channels" element={
+                <Route path="/events/:eventId/channels" element={
                   <PageWrapper>
                     <div className="flex h-screen pt-12 pb-12 max-w-7xl mx-auto">
                       <div className="w-80 h-full">

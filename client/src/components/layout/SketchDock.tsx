@@ -11,16 +11,16 @@ import { useAppStore } from "../../store/useAppStore";
 import { useNavigate, useLocation } from "react-router-dom";
 
 export const SketchDock = () => {
-    const { setCursorVariant } = useAppStore();
+    const { setCursorVariant, activeEventId } = useAppStore();
     const navigate = useNavigate();
     const location = useLocation();
 
     const items = [
         { id: "dashboard", path: "/", icon: LayoutGrid, label: "The Desk" },
         { id: "create-event", path: "/create", icon: PenTool, label: "Draft" },
-        { id: "tasks", path: "/tasks", icon: CheckSquare, label: "To-Dos" },
+        { id: "tasks", path: "/tasks", icon: CheckSquare, label: "To-Dos" }, // Tasks might also need eventId later
         { id: "messages", path: "/messages", icon: MessageSquare, label: "Notes" },
-        { id: "channels", path: "/channels", icon: Hash, label: "Channels" },
+        { id: "channels", path: activeEventId ? `/events/${activeEventId}/channels` : "/channels", icon: Hash, label: "Channels" },
         { id: "team", path: "/team", icon: Users, label: "Crew" },
     ];
 

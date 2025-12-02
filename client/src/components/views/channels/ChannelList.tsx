@@ -21,19 +21,31 @@ const colorOptions = [
     'bg-[#94ff4d]',
 ];
 
+import { useParams } from "react-router-dom";
+import { useEffect } from "react";
+
 export const ChannelList = () => {
-    const { channels, activeChannelId, setActiveChannel, addChannel } = useChannelStore();
+    const { eventId } = useParams();
+    const { channels, activeChannelId, setActiveChannel, addChannel, fetchChannels } = useChannelStore();
     const [showModal, setShowModal] = useState(false);
     const [teamName, setTeamName] = useState("");
     const [teamDesc, setTeamDesc] = useState("");
     const [selectedColor, setSelectedColor] = useState(colorOptions[0]);
+
+    useEffect(() => {
+        if (eventId) {
+            fetchChannels(eventId);
+        }
+    }, [eventId, fetchChannels]);
 
     const handleCreateTeam = () => {
         if (!teamName.trim()) {
             toast.error("Team name is required");
             return;
         }
-        addChannel({
+        if (!eventId) return;
+
+        addChannel(eventId, {
             name: teamName,
             description: teamDesc,
             icon: 'Users',
@@ -61,8 +73,8 @@ export const ChannelList = () => {
                                 key={channel.id}
                                 onClick={() => setActiveChannel(channel.id)}
                                 className={`group relative p-4 rounded-xl border-2 transition-all cursor-pointer ${isActive
-                                        ? "bg-[var(--color-surface)] border-[var(--color-ink)] shadow-[4px_4px_0px_var(--color-ink)]"
-                                        : "bg-white border-transparent hover:border-[var(--color-ink)]/20 hover:bg-[var(--color-surface)]/50"
+                                    ? "bg-[var(--color-surface)] border-[var(--color-ink)] shadow-[4px_4px_0px_var(--color-ink)]"
+                                    : "bg-white border-transparent hover:border-[var(--color-ink)]/20 hover:bg-[var(--color-surface)]/50"
                                     }`}
                                 whileHover={{ x: 5 }}
                                 whileTap={{ scale: 0.98 }}
@@ -83,7 +95,7 @@ export const ChannelList = () => {
                 </div>
 
                 <div className="pt-6 border-t-2 border-dashed border-[var(--color-ink)]/10">
-                    <button 
+                    <button
                         onClick={() => setShowModal(true)}
                         className="w-full py-3 border-2 border-dashed border-[var(--color-ink)]/30 rounded-xl font-hand text-[var(--color-ink)]/60 hover:border-[var(--color-ink)] hover:text-[var(--color-ink)] transition-all"
                     >

@@ -19,11 +19,12 @@ events.put('/tasks/:id', taskController.updateTask);
 
 events.get('/:eventId/channels', channelController.getChannels);
 events.post('/:eventId/channels', channelController.createChannel);
+events.post('/:channelId/subgroups', channelController.createSubgroup);
 
 
 events.use('/*', verifyAuth());
 events.put('/:id', eventController.updateEvent);
-events.delete('/:id', eventController.deleteEvent); 
+events.delete('/:id', eventController.deleteEvent);
 
 
 events.get('/:eventId/expenses', expenseController.getExpenses);

@@ -7,7 +7,7 @@ import { toast } from "sonner";
 export const ChannelView = () => {
     const { channels, activeChannelId, activeSubgroupId, setActiveSubgroup, addSubgroup } = useChannelStore();
     const activeChannel = channels.find(c => c.id === activeChannelId);
-    
+
     const [showSubgroupModal, setShowSubgroupModal] = useState(false);
     const [showTaskModal, setShowTaskModal] = useState(false);
     const [subgroupName, setSubgroupName] = useState("");
@@ -22,7 +22,7 @@ export const ChannelView = () => {
             return;
         }
         if (!activeChannelId) return;
-        
+
         addSubgroup(activeChannelId, {
             name: subgroupName,
             members: subgroupMembers,
@@ -61,7 +61,7 @@ export const ChannelView = () => {
         if (!activeSubgroupId) return;
         setTasks(prev => ({
             ...prev,
-            [activeSubgroupId]: prev[activeSubgroupId]?.map(t => 
+            [activeSubgroupId]: prev[activeSubgroupId]?.map(t =>
                 t.id === taskId ? { ...t, done: !t.done } : t
             ) || []
         }));
@@ -108,8 +108,8 @@ export const ChannelView = () => {
                                     key={subgroup.id}
                                     onClick={() => setActiveSubgroup(subgroup.id)}
                                     className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${activeSubgroupId === subgroup.id
-                                            ? "bg-[var(--color-ink)] text-[var(--color-paper)] border-[var(--color-ink)]"
-                                            : "bg-white text-[var(--color-ink)] border-[var(--color-ink)]/10 hover:border-[var(--color-ink)]"
+                                        ? "bg-[var(--color-ink)] text-[var(--color-paper)] border-[var(--color-ink)]"
+                                        : "bg-white text-[var(--color-ink)] border-[var(--color-ink)]/10 hover:border-[var(--color-ink)]"
                                         }`}
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
@@ -122,7 +122,7 @@ export const ChannelView = () => {
                                     </div>
                                 </motion.div>
                             ))}
-                            <button 
+                            <button
                                 onClick={() => setShowSubgroupModal(true)}
                                 className="w-full py-3 border-2 border-dashed border-[var(--color-ink)]/30 rounded-xl font-hand text-[var(--color-ink)]/60 hover:border-[var(--color-ink)] hover:text-[var(--color-ink)] transition-all"
                             >
@@ -155,11 +155,11 @@ export const ChannelView = () => {
                                             {activeChannel.subgroups.find(s => s.id === activeSubgroupId)?.name}
                                         </span>
                                     </p>
-                                    
+
                                     {currentTasks.length === 0 ? (
                                         <div className="text-center py-12">
                                             <p className="font-hand text-xl text-[var(--color-ink)]/40 mb-4">No tasks yet</p>
-                                            <button 
+                                            <button
                                                 onClick={() => setShowTaskModal(true)}
                                                 className="px-6 py-3 bg-[var(--color-ink)] text-[var(--color-paper)] font-bold rounded-full hover:scale-105 transition-transform"
                                             >
@@ -174,7 +174,7 @@ export const ChannelView = () => {
                                                     className="flex items-center gap-4 p-4 bg-white rounded-xl border-2 border-[var(--color-ink)]/10 hover:border-[var(--color-ink)]/30 transition-colors"
                                                     whileHover={{ x: 5 }}
                                                 >
-                                                    <div 
+                                                    <div
                                                         onClick={() => toggleTask(task.id)}
                                                         className={`w-6 h-6 border-2 border-[var(--color-ink)] rounded cursor-pointer flex items-center justify-center ${task.done ? 'bg-[var(--color-accent)]' : 'bg-white'}`}
                                                     >

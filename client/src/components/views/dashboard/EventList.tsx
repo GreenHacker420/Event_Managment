@@ -4,22 +4,30 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { eventsApi } from "../../../lib/api";
 
+import { useAppStore } from "../../../store/useAppStore";
+
 export const EventList = () => {
     const navigate = useNavigate();
+    const { setActiveEventId } = useAppStore();
     const { data: events, isLoading, error } = useQuery({
         queryKey: ['events'],
         queryFn: eventsApi.getAll,
         select: (data) => data.map((event: any) => ({
             ...event,
-            
+
             budget: {
                 total: Number(event.budget) || 0,
-                spent: 0 
+                spent: 0
             },
-            status: event.status || 'Planning', 
-            color: "bg-[#ffcc00]" 
+            status: event.status || 'Planning',
+            color: "bg-[#ffcc00]"
         }))
     });
+
+    const handleEventClick = (eventId: string) => {
+        setActiveEventId(eventId);
+        navigate(`/events/${eventId}/channels`);
+    };
 
     if (isLoading) return <div className="p-8 text-center font-hand text-xl">Loading events...</div>;
     if (error) return <div className="p-8 text-center font-hand text-xl text-red-500">Error loading events. Please try again.</div>;
@@ -44,6 +52,7 @@ export const EventList = () => {
                     events?.map((event: any, index: number) => (
                         <motion.div
                             key={event.id}
+                            onClick={() => handleEventClick(event.id)}
                             initial={{ x: -20, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             transition={{ delay: index * 0.1 }}
@@ -76,7 +85,7 @@ export const EventList = () => {
                 )}
             </div>
 
-            <button 
+            <button
                 onClick={() => navigate('/create')}
                 className="w-full mt-6 py-3 border-2 border-dashed border-[var(--color-ink)]/30 rounded-xl font-hand text-[var(--color-ink)]/60 hover:border-[var(--color-ink)] hover:text-[var(--color-ink)] transition-all"
             >

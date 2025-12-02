@@ -23,6 +23,7 @@ app.use('*', cors({
 // Auth.js Configuration
 app.use('*', initAuthConfig((c) => ({
     secret: process.env.AUTH_SECRET,
+    basePath: '/api/auth',
     trustHost: true,
     providers: [
         Google({

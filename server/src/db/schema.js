@@ -99,6 +99,20 @@ export const channels = mysqlTable("channel", {
         .references(() => events.id, { onDelete: "cascade" }),
     name: varchar("name", { length: 255 }).notNull(), // e.g., Logistics, Marketing
     description: text("description"),
+    icon: varchar("icon", { length: 50 }),
+    color: varchar("color", { length: 50 }),
+    createdAt: timestamp("createdAt").defaultNow(),
+})
+
+export const subgroups = mysqlTable("subgroup", {
+    id: varchar("id", { length: 255 })
+        .primaryKey()
+        .$defaultFn(() => crypto.randomUUID()),
+    channelId: varchar("channelId", { length: 255 })
+        .notNull()
+        .references(() => channels.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 255 }).notNull(),
+    members: int("members").default(1),
     createdAt: timestamp("createdAt").defaultNow(),
 })
 

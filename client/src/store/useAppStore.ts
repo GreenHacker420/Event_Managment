@@ -2,14 +2,16 @@ import { create } from 'zustand';
 
 interface AppState {
     inkLevel: number;
-    cursorVariant: 'default' | 'hover' | 'text' | 'drawing';
+    cursorVariant: 'default' | 'hover' | 'text';
     isAuthenticated: boolean;
-    user: { name: string } | null;
+    user: { name: string; email: string } | null;
+    activeEventId: string | null;
 
     setInkLevel: (level: number) => void;
-    setCursorVariant: (variant: 'default' | 'hover' | 'text' | 'drawing') => void;
+    setCursorVariant: (variant: 'default' | 'hover' | 'text') => void;
     login: (username: string) => void;
     logout: () => void;
+    setActiveEventId: (id: string | null) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -17,9 +19,11 @@ export const useAppStore = create<AppState>((set) => ({
     cursorVariant: 'default',
     isAuthenticated: false,
     user: null,
+    activeEventId: null,
 
     setInkLevel: (level) => set({ inkLevel: level }),
     setCursorVariant: (variant) => set({ cursorVariant: variant }),
-    login: (username) => set({ isAuthenticated: true, user: { name: username } }),
-    logout: () => set({ isAuthenticated: false, user: null }),
+    login: (username) => set({ isAuthenticated: true, user: { name: username, email: '' } }),
+    logout: () => set({ isAuthenticated: false, user: null, activeEventId: null }),
+    setActiveEventId: (id) => set({ activeEventId: id }),
 }));
