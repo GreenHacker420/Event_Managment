@@ -191,24 +191,10 @@ export const LoginSignupView = () => {
                                 <p className="text-center font-hand text-sm text-[var(--color-ink)]/50 mb-4">Or continue with</p>
                                 <button 
                                     type="button"
-                                    onClick={async () => {
-                                        const res = await fetch('http://localhost:3000/api/auth/csrf', { credentials: 'include' });
-                                        const { csrfToken } = await res.json();
-                                        const form = document.createElement('form');
-                                        form.method = 'POST';
-                                        form.action = 'http://localhost:3000/api/auth/signin/google';
-                                        const csrfInput = document.createElement('input');
-                                        csrfInput.name = 'csrfToken';
-                                        csrfInput.value = csrfToken;
-                                        const callbackInput = document.createElement('input');
-                                        callbackInput.name = 'callbackUrl';
-                                        callbackInput.value = 'http://localhost:5000';
-                                        form.appendChild(csrfInput);
-                                        form.appendChild(callbackInput);
-                                        document.body.appendChild(form);
-                                        form.submit();
+                                    onClick={() => {
+                                        window.location.href = 'http://localhost:3000/api/auth/signin?callbackUrl=http://localhost:5000';
                                     }}
-                                    className="w-full py-3 border-2 border-[var(--color-ink)]/20 rounded-xl font-serif hover:border-[var(--color-ink)] hover:shadow-[2px_2px_0px_var(--color-ink)] transition-all flex items-center justify-center gap-2"
+                                    className="w-full py-3 border-2 border-[var(--color-ink)]/20 rounded-xl font-serif hover:border-[var(--color-ink)] hover:shadow-[2px_2px_0px_var(--color-ink)] transition-all flex items-center justify-center gap-2 cursor-pointer"
                                 >
                                     <svg className="w-5 h-5" viewBox="0 0 24 24">
                                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
