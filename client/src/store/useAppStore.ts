@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { authApi } from '../lib/api';
+import { signOut, useSession } from '../lib/auth';
 import { persist } from 'zustand/middleware';
 
 export interface User {
@@ -53,30 +53,7 @@ export const useAppStore = create<AppState>()(
 
             logout: async () => {
                 try {
-                    const data = await authApi.getCsrfToken();
-                    const csrfToken = data.csrfToken;
-
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    const baseUrl = import.meta.env.VITE_API_URL || '';
-                    form.action = `${baseUrl}/api/auth/signout`;
-
-                    const csrfInput = document.createElement('input');
-                    csrfInput.type = 'hidden';
-                    csrfInput.name = 'csrfToken';
-                    csrfInput.value = csrfToken;
-                    form.appendChild(csrfInput);
-
-                    const callbackInput = document.createElement('input');
-                    callbackInput.type = 'hidden';
-                    callbackInput.name = 'callbackUrl';
-                    callbackInput.value = window.location.origin;
-                    form.appendChild(callbackInput);
-
-                    document.body.appendChild(form);
-                    form.submit();
-
-                    // Optimistically update state
+                    await signOut();
                     set({ user: null, isAuthenticated: false, isGuest: false, activeEventId: null });
                     localStorage.removeItem('activeEventId');
                 } catch (error) {
@@ -88,7 +65,12 @@ export const useAppStore = create<AppState>()(
 
             checkSession: async () => {
                 try {
-                    const session = await authApi.getSession();
+                    const response = await fetch(
+                        `${import.meta.env.VITE_API_URL || ''}/api/auth/get-session`,
+                        { credentials: 'include' }
+                    );
+                    const session = await response.json();
+
                     if (session?.user) {
                         set({
                             isAuthenticated: true,
