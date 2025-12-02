@@ -1,5 +1,5 @@
 import { getDb, schema } from '../db/index.js';
-import { eq } from 'drizzle-orm';
+import { eq, sql, and } from 'drizzle-orm';
 
 export const getEvents = async (c) => {
     try {
@@ -143,5 +143,77 @@ export const deleteEvent = async (c) => {
     } catch (error) {
         console.error('Error deleting event:', error);
         return c.json({ error: 'Failed to delete event' }, 500);
+    }
+};
+
+// Get event statistics for dashboard
+export const getEventStats = async (c) => {
+    const eventId = c.req.param('eventId');
+    try {
+        const db = await getDb();
+
+        // Get event details
+        const event = await db.select().from(schema.events).where(eq(schema.events.id, eventId));
+        if (event.length === 0) {
+            return c.json({ error: 'Event not found' }, 404);
+        }
+
+        // Get task statistics
+        const taskStats = await db
+            .select({
+                total: sql`COUNT(*)`,
+                completed: sql`SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END)`,
+                inProgress: sql`SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END)`,
+                todo: sql`SUM(CASE WHEN status = 'todo' THEN 1 ELSE 0 END)`,
+            })
+            .from(schema.tasks)
+            .where(eq(schema.tasks.eventId, eventId));
+
+        // Get expense statistics
+        const expenseStats = await db
+            .select({
+                total: sql`COALESCE(SUM(amount), 0)`,
+                approved: sql`COALESCE(SUM(CASE WHEN status = 'approved' THEN amount ELSE 0 END), 0)`,
+                pending: sql`COALESCE(SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END), 0)`,
+            })
+            .from(schema.expenses)
+            .where(eq(schema.expenses.eventId, eventId));
+
+        // Get channel count
+        const channelCount = await db
+            .select({ count: sql`COUNT(*)` })
+            .from(schema.channels)
+            .where(eq(schema.channels.eventId, eventId));
+
+        // Get member count
+        const memberCount = await db
+            .select({ count: sql`COUNT(*)` })
+            .from(schema.eventMembers)
+            .where(eq(schema.eventMembers.eventId, eventId));
+
+        const totalTasks = Number(taskStats[0]?.total) || 0;
+        const completedTasks = Number(taskStats[0]?.completed) || 0;
+        const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+        return c.json({
+            event: event[0],
+            tasks: {
+                total: totalTasks,
+                completed: completedTasks,
+                inProgress: Number(taskStats[0]?.inProgress) || 0,
+                todo: Number(taskStats[0]?.todo) || 0,
+            },
+            budget: {
+                total: Number(event[0].budget) || 0,
+                spent: Number(expenseStats[0]?.approved) || 0,
+                pending: Number(expenseStats[0]?.pending) || 0,
+            },
+            channels: Number(channelCount[0]?.count) || 0,
+            members: Number(memberCount[0]?.count) || 0,
+            progress,
+        });
+    } catch (error) {
+        console.error('Error fetching event stats:', error);
+        return c.json({ error: 'Failed to fetch event stats' }, 500);
     }
 };

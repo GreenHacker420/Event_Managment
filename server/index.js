@@ -5,9 +5,11 @@ import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import { authHandler, initAuthConfig, verifyAuth } from '@hono/auth-js'
 import Google from '@auth/core/providers/google'
+import GitHub from '@auth/core/providers/github'
 import { DrizzleAdapter } from '@auth/drizzle-adapter'
 import { getDb } from './src/db/index.js'
 import events from './src/routes/events.js'
+import users from './src/routes/users.js'
 
 const app = new Hono()
 
@@ -30,11 +32,25 @@ app.use('*', initAuthConfig((c) => ({
             clientId: process.env.GOOGLE_ID,
             clientSecret: process.env.GOOGLE_SECRET,
         }),
+        GitHub({
+            clientId: process.env.GITHUB_ID,
+            clientSecret: process.env.GITHUB_SECRET,
+        }),
     ],
     adapter: DrizzleAdapter(db),
     callbacks: {
+        async session({ session, user }) {
+            // Include user id in session
+            if (session.user && user) {
+                session.user.id = user.id;
+            }
+            return session;
+        },
         async redirect({ url, baseUrl }) {
-            return 'http://localhost:5000'
+            // Allow relative URLs and same-origin URLs
+            if (url.startsWith('/')) return `${baseUrl}${url}`;
+            if (new URL(url).origin === baseUrl) return url;
+            return baseUrl;
         }
     }
 })))
@@ -43,6 +59,7 @@ app.use('/api/auth/*', authHandler())
 
 // Mount Routes
 app.route('/api/events', events)
+app.route('/api/users', users)
 
 // Health check
 app.get('/', (c) => {

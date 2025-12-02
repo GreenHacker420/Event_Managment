@@ -149,6 +149,56 @@ export const expenses = mysqlTable("expense", {
     description: varchar("description", { length: 255 }).notNull(),
     category: varchar("category", { length: 100 }),
     status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending"),
-    date: datetime("date"), // Removed defaultNow() as it's not supported on datetime in this version/dialect
+    date: datetime("date"),
+    createdAt: timestamp("createdAt").defaultNow(),
+})
+
+// Event Members - for team management
+export const eventMembers = mysqlTable("event_member", {
+    id: varchar("id", { length: 255 })
+        .primaryKey()
+        .$defaultFn(() => crypto.randomUUID()),
+    eventId: varchar("eventId", { length: 255 })
+        .notNull()
+        .references(() => events.id, { onDelete: "cascade" }),
+    userId: varchar("userId", { length: 255 })
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+    role: mysqlEnum("role", ["organizer", "team_lead", "member", "viewer"]).default("member"),
+    channelId: varchar("channelId", { length: 255 })
+        .references(() => channels.id, { onDelete: "set null" }),
+    joinedAt: timestamp("joinedAt").defaultNow(),
+})
+
+// Activity Log - for tracking actions
+export const activities = mysqlTable("activity", {
+    id: varchar("id", { length: 255 })
+        .primaryKey()
+        .$defaultFn(() => crypto.randomUUID()),
+    eventId: varchar("eventId", { length: 255 })
+        .notNull()
+        .references(() => events.id, { onDelete: "cascade" }),
+    userId: varchar("userId", { length: 255 })
+        .references(() => users.id, { onDelete: "set null" }),
+    type: mysqlEnum("type", ["task_created", "task_completed", "task_updated", "expense_added", "expense_approved", "member_added", "channel_created", "event_updated"]).notNull(),
+    description: text("description"),
+    metadata: text("metadata"), // JSON string for additional data
+    createdAt: timestamp("createdAt").defaultNow(),
+})
+
+// Messages - for chat functionality
+export const messages = mysqlTable("message", {
+    id: varchar("id", { length: 255 })
+        .primaryKey()
+        .$defaultFn(() => crypto.randomUUID()),
+    eventId: varchar("eventId", { length: 255 })
+        .notNull()
+        .references(() => events.id, { onDelete: "cascade" }),
+    channelId: varchar("channelId", { length: 255 })
+        .references(() => channels.id, { onDelete: "cascade" }),
+    userId: varchar("userId", { length: 255 })
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
     createdAt: timestamp("createdAt").defaultNow(),
 })
