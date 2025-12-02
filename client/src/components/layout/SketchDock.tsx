@@ -4,8 +4,8 @@ import {
     PenTool,
     CheckSquare,
     MessageSquare,
-    Users,
-    Hash
+    Hash,
+    CircleDollarSign
 } from "lucide-react";
 import { useAppStore } from "../../store/useAppStore";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -21,7 +21,7 @@ export const SketchDock = () => {
         { id: "tasks", path: "/tasks", icon: CheckSquare, label: "To-Dos" },
         { id: "messages", path: "/messages", icon: MessageSquare, label: "Notes" },
         { id: "channels", path: "/channels", icon: Hash, label: "Channels" },
-        { id: "team", path: "/team", icon: Users, label: "Crew" },
+        { id: "budget", path: "/budget", icon: CircleDollarSign, label: "Budget" },
     ];
 
     return (

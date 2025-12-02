@@ -1,7 +1,12 @@
 import { motion } from "framer-motion";
 import { PieChart, TrendingUp, DollarSign } from "lucide-react";
+import { useBudgetStore } from "../../../store/useBudgetStore";
 
 export const DashboardStats = () => {
+    const { totalBudget, expenses } = useBudgetStore();
+    const totalSpent = expenses.reduce((acc, curr) => acc + curr.amount, 0);
+    const utilization = Math.min((totalSpent / totalBudget) * 100, 100);
+
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
             {/* Budget Meter - "Ink Pot" Style */}
@@ -18,16 +23,16 @@ export const DashboardStats = () => {
                     <motion.div
                         className="absolute bottom-0 left-0 right-0 bg-[var(--color-accent)] opacity-80"
                         initial={{ height: "0%" }}
-                        animate={{ height: "65%" }}
+                        animate={{ height: `${utilization}%` }}
                         transition={{ duration: 1.5, ease: "easeInOut" }}
                     >
                         <div className="absolute top-0 left-0 right-0 h-4 bg-[var(--color-accent)] opacity-50 animate-wave" />
                     </motion.div>
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="font-hand text-3xl font-bold text-[var(--color-ink)]">65%</span>
+                        <span className="font-hand text-3xl font-bold text-[var(--color-ink)]">{Math.round(utilization)}%</span>
                     </div>
                 </div>
-                <p className="mt-2 font-hand text-sm text-[var(--color-ink)]/60">Spent: $12,450 / $19,000</p>
+                <p className="mt-2 font-hand text-sm text-[var(--color-ink)]/60">Spent: ${totalSpent.toLocaleString()} / ${totalBudget.toLocaleString()}</p>
             </motion.div>
 
             {/* Task Pie - Hand Drawn Circle */}
