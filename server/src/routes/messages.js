@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { verifyAuth } from '@hono/auth-js';
+import { requireAuth } from "../middleware/auth.js";
 import { getDb, schema } from '../db/index.js';
 import { eq, and, desc } from 'drizzle-orm';
 
@@ -40,7 +40,7 @@ messages.get('/:eventId', async (c) => {
     }
 });
 
-messages.post('/:eventId', verifyAuth(), async (c) => {
+messages.post('/:eventId', requireAuth, async (c) => {
     const eventId = c.req.param('eventId');
     try {
         const auth = c.get('authUser');
@@ -94,7 +94,7 @@ messages.post('/:eventId', verifyAuth(), async (c) => {
     }
 });
 
-messages.delete('/:eventId/:messageId', verifyAuth(), async (c) => {
+messages.delete('/:eventId/:messageId', requireAuth, async (c) => {
     const { messageId } = c.req.param();
     try {
         const db = await getDb();

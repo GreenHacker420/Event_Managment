@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { signOut, useSession } from '../lib/auth';
+import { authClient } from '../lib/auth';
 import { persist } from 'zustand/middleware';
 
 export interface User {
@@ -53,7 +53,7 @@ export const useAppStore = create<AppState>()(
 
             logout: async () => {
                 try {
-                    await signOut();
+                    await authClient.signOut();
                     set({ user: null, isAuthenticated: false, isGuest: false, activeEventId: null });
                     localStorage.removeItem('activeEventId');
                 } catch (error) {
@@ -65,20 +65,16 @@ export const useAppStore = create<AppState>()(
 
             checkSession: async () => {
                 try {
-                    const response = await fetch(
-                        `${import.meta.env.VITE_API_URL || ''}/api/auth/get-session`,
-                        { credentials: 'include' }
-                    );
-                    const session = await response.json();
+                    const session = await authClient.getSession();
 
-                    if (session?.user) {
+                    if (session?.data?.user) {
                         set({
                             isAuthenticated: true,
                             user: {
-                                id: session.user.id,
-                                name: session.user.name || session.user.email?.split('@')[0] || 'User',
-                                email: session.user.email || '',
-                                image: session.user.image,
+                                id: session.data.user.id,
+                                name: session.data.user.name || session.data.user.email?.split('@')[0] || 'User',
+                                email: session.data.user.email || '',
+                                image: session.data.user.image || undefined,
                             },
                             isGuest: false
                         });

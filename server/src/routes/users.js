@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
-import { verifyAuth } from '@hono/auth-js';
 import { getDb, schema } from '../db/index.js';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
+import { requireAuth } from '../middleware/auth.js';
 
 const users = new Hono();
 
@@ -48,15 +48,15 @@ users.post('/register', async (c) => {
 });
 
 // Get current user profile
-users.get('/me', verifyAuth(), async (c) => {
+users.get('/me', requireAuth, async (c) => {
     try {
-        const auth = c.get('authUser');
-        if (!auth?.session?.user?.email) {
+        const user = c.get('user');
+        if (!user?.email) {
             return c.json({ error: 'Unauthorized' }, 401);
         }
 
         const db = await getDb();
-        const user = await db.select({
+        const userRecord = await db.select({
             id: schema.users.id,
             name: schema.users.name,
             email: schema.users.email,
@@ -65,13 +65,13 @@ users.get('/me', verifyAuth(), async (c) => {
             location: schema.users.location,
             bio: schema.users.bio,
             role: schema.users.role,
-        }).from(schema.users).where(eq(schema.users.email, auth.session.user.email));
-        
-        if (user.length === 0) {
+        }).from(schema.users).where(eq(schema.users.email, user.email));
+
+        if (userRecord.length === 0) {
             return c.json({ error: 'User not found' }, 404);
         }
 
-        return c.json(user[0]);
+        return c.json(userRecord[0]);
     } catch (error) {
         console.error('Error fetching user:', error);
         return c.json({ error: 'Failed to fetch user' }, 500);
@@ -79,10 +79,10 @@ users.get('/me', verifyAuth(), async (c) => {
 });
 
 // Update current user profile
-users.put('/me', verifyAuth(), async (c) => {
+users.put('/me', requireAuth, async (c) => {
     try {
-        const auth = c.get('authUser');
-        if (!auth?.session?.user?.email) {
+        const user = c.get('user');
+        if (!user?.email) {
             return c.json({ error: 'Unauthorized' }, 401);
         }
 
@@ -100,7 +100,7 @@ users.put('/me', verifyAuth(), async (c) => {
 
         await db.update(schema.users)
             .set(updateData)
-            .where(eq(schema.users.email, auth.session.user.email));
+            .where(eq(schema.users.email, user.email));
 
         const updatedUser = await db.select({
             id: schema.users.id,
@@ -111,8 +111,8 @@ users.put('/me', verifyAuth(), async (c) => {
             location: schema.users.location,
             bio: schema.users.bio,
             role: schema.users.role,
-        }).from(schema.users).where(eq(schema.users.email, auth.session.user.email));
-        
+        }).from(schema.users).where(eq(schema.users.email, user.email));
+
         return c.json({ message: 'Profile updated', user: updatedUser[0] });
     } catch (error) {
         console.error('Error updating user:', error);
@@ -144,7 +144,7 @@ users.get('/:id', async (c) => {
 });
 
 // Search users by email (for inviting team members)
-users.get('/search/:email', verifyAuth(), async (c) => {
+users.get('/search/:email', requireAuth, async (c) => {
     const email = c.req.param('email');
     try {
         const db = await getDb();

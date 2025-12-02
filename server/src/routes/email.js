@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
-import { verifyAuth } from '@hono/auth-js';
+import { requireAuth } from "../middleware/auth.js";
 import emailService from '../services/emailService.js';
 
 const email = new Hono();
 
-email.post('/invite', verifyAuth(), async (c) => {
+email.post('/invite', requireAuth, async (c) => {
     try {
         const auth = c.get('authUser');
         const { to, eventName, eventDate, inviteLink } = await c.req.json();
@@ -23,7 +23,7 @@ email.post('/invite', verifyAuth(), async (c) => {
     }
 });
 
-email.post('/task-assignment', verifyAuth(), async (c) => {
+email.post('/task-assignment', requireAuth, async (c) => {
     try {
         const auth = c.get('authUser');
         const { to, taskTitle, eventName, dueDate } = await c.req.json();
@@ -42,7 +42,7 @@ email.post('/task-assignment', verifyAuth(), async (c) => {
     }
 });
 
-email.post('/reminder', verifyAuth(), async (c) => {
+email.post('/reminder', requireAuth, async (c) => {
     try {
         const { to, eventName, eventDate, eventLocation } = await c.req.json();
         

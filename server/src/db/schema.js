@@ -6,7 +6,8 @@ import {
     text,
     datetime,
     decimal,
-    mysqlEnum
+    mysqlEnum,
+    boolean
 } from "drizzle-orm/mysql-core"
 
 export const users = mysqlTable("user", {
@@ -15,15 +16,15 @@ export const users = mysqlTable("user", {
         .$defaultFn(() => crypto.randomUUID()),
     name: varchar("name", { length: 255 }),
     email: varchar("email", { length: 255 }).unique(),
-    emailVerified: timestamp("emailVerified", { mode: "date", fsp: 3 }),
+    emailVerified: boolean("emailVerified").default(false),
     image: varchar("image", { length: 255 }),
     password: varchar("password", { length: 255 }),
     phone: varchar("phone", { length: 50 }),
     location: varchar("location", { length: 255 }),
     bio: text("bio"),
     role: varchar("role", { length: 50 }),
-    createdAt: timestamp("createdAt").defaultNow(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
+    createdAt: timestamp("createdAt", { mode: "string" }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { mode: "string" }).defaultNow().onUpdateNow(),
 })
 
 export const accounts = mysqlTable("account", {
@@ -33,33 +34,41 @@ export const accounts = mysqlTable("account", {
     userId: varchar("userId", { length: 255 })
         .notNull()
         .references(() => users.id, { onDelete: "cascade" }),
-    type: varchar("type", { length: 255 }).notNull(),
-    provider: varchar("provider", { length: 255 }).notNull(),
-    providerAccountId: varchar("providerAccountId", { length: 255 }).notNull(),
-    refresh_token: text("refresh_token"),
-    access_token: text("access_token"),
-    expires_at: int("expires_at"),
-    token_type: varchar("token_type", { length: 255 }),
+    accountId: varchar("accountId", { length: 255 }).notNull(),
+    providerId: varchar("providerId", { length: 255 }).notNull(),
+    accessToken: text("accessToken"),
+    refreshToken: text("refreshToken"),
+    accessTokenExpiresAt: timestamp("accessTokenExpiresAt", { mode: "string" }),
+    refreshTokenExpiresAt: timestamp("refreshTokenExpiresAt", { mode: "string" }),
     scope: varchar("scope", { length: 255 }),
-    id_token: text("id_token"),
-    session_state: varchar("session_state", { length: 255 }),
+    idToken: text("idToken"),
+    password: text("password"),
+    createdAt: timestamp("createdAt", { mode: "string" }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { mode: "string" }).notNull().defaultNow().onUpdateNow(),
 })
 
 export const sessions = mysqlTable("session", {
-    sessionToken: varchar("sessionToken", { length: 255 }).primaryKey(),
+    id: varchar("id", { length: 255 }).primaryKey(),
     userId: varchar("userId", { length: 255 })
         .notNull()
         .references(() => users.id, { onDelete: "cascade" }),
-    expires: timestamp("expires", { mode: "date" }).notNull(),
+    token: varchar("token", { length: 255 }).notNull().unique(),
+    expiresAt: timestamp("expiresAt", { mode: "string" }).notNull(),
+    ipAddress: varchar("ipAddress", { length: 255 }),
+    userAgent: text("userAgent"),
+    createdAt: timestamp("createdAt", { mode: "string" }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { mode: "string" }).notNull().defaultNow().onUpdateNow(),
 })
 
-export const verificationTokens = mysqlTable("verificationToken", {
+export const verificationTokens = mysqlTable("verification", {
     id: varchar("id", { length: 255 })
         .primaryKey()
         .$defaultFn(() => crypto.randomUUID()),
     identifier: varchar("identifier", { length: 255 }).notNull(),
-    token: varchar("token", { length: 255 }).notNull(),
-    expires: timestamp("expires", { mode: "date" }).notNull(),
+    value: varchar("value", { length: 255 }).notNull(),
+    expiresAt: timestamp("expiresAt", { mode: "string" }).notNull(),
+    createdAt: timestamp("createdAt", { mode: "string" }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { mode: "string" }).notNull().defaultNow().onUpdateNow(),
 })
 
 export const events = mysqlTable("event", {

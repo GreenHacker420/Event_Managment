@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { verifyAuth } from '@hono/auth-js';
+import { requireAuth } from "../middleware/auth.js";
 import { getDb, schema } from '../db/index.js';
 import { eq, and } from 'drizzle-orm';
 import emailService from '../services/emailService.js';
@@ -32,7 +32,7 @@ members.get('/:eventId', async (c) => {
     }
 });
 
-members.post('/:eventId', verifyAuth(), async (c) => {
+members.post('/:eventId', requireAuth, async (c) => {
     const eventId = c.req.param('eventId');
     try {
         const auth = c.get('authUser');
@@ -111,7 +111,7 @@ members.post('/:eventId', verifyAuth(), async (c) => {
     }
 });
 
-members.put('/:eventId/:memberId', verifyAuth(), async (c) => {
+members.put('/:eventId/:memberId', requireAuth, async (c) => {
     const { eventId, memberId } = c.req.param();
     try {
         const db = await getDb();
@@ -132,7 +132,7 @@ members.put('/:eventId/:memberId', verifyAuth(), async (c) => {
     }
 });
 
-members.delete('/:eventId/:memberId', verifyAuth(), async (c) => {
+members.delete('/:eventId/:memberId', requireAuth, async (c) => {
     const { memberId } = c.req.param();
     try {
         const db = await getDb();

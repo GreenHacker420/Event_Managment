@@ -12,12 +12,7 @@ import events from './src/routes/events.js'
 import usersRoute from './src/routes/users.js'
 import emailRoute from './src/routes/email.js'
 
-const app = new Hono({
-    Variables: {
-        user: typeof auth.$Infer.Session.user | null,
-        session: typeof auth.$Infer.Session.session | null
-    }
-})
+const app = new Hono()
 const db = await getDb()
 const PORT = process.env.PORT || 3000
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173'
@@ -35,24 +30,33 @@ app.use('*', cors({
     credentials: true,
 }))
 
-// Better-Auth session middleware
-app.use('*', async (c, next) => {
-    const session = await auth.api.getSession({ headers: c.req.raw.headers });
-
-    if (!session) {
-        c.set('user', null);
-        c.set('session', null);
-        return next();
-    }
-
-    c.set('user', session.user);
-    c.set('session', session.session);
-    return next();
+app.on(['GET', 'POST'], '/api/auth/*', async (c) => {
+    return auth.handler(c.req.raw);
 });
 
-// Better-Auth handler
-app.on(['POST', 'GET'], '/api/auth/**', (c) => {
-    return auth.handler(c.req.raw);
+
+app.use('*', async (c, next) => {
+    if (c.req.path.startsWith('/api/auth')) {
+        return next();
+    }
+    
+    try {
+        const session = await auth.api.getSession({ headers: c.req.raw.headers });
+
+        if (session) {
+            c.set('user', session.user);
+            c.set('session', session.session);
+        } else {
+            c.set('user', null);
+            c.set('session', null);
+        }
+    } catch (error) {
+        console.error('Session check error:', error);
+        c.set('user', null);
+        c.set('session', null);
+    }
+    
+    return next();
 });
 
 // Routes
