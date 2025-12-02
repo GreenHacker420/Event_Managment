@@ -30,7 +30,7 @@ app.use('*', initAuthConfig((c) => ({
     adapter: DrizzleAdapter(db),
     callbacks: {
         async redirect({ url, baseUrl }) {
-            return 'http://localhost:5173'
+            return 'http://localhost:5000'
         }
     }
 })))

@@ -202,7 +202,7 @@ export const LoginSignupView = () => {
                                         csrfInput.value = csrfToken;
                                         const callbackInput = document.createElement('input');
                                         callbackInput.name = 'callbackUrl';
-                                        callbackInput.value = 'http://localhost:5173';
+                                        callbackInput.value = 'http://localhost:5000';
                                         form.appendChild(csrfInput);
                                         form.appendChild(callbackInput);
                                         document.body.appendChild(form);
