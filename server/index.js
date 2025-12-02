@@ -20,6 +20,7 @@ app.use('*', cors())
 // Auth.js Configuration
 app.use('*', initAuthConfig((c) => ({
     secret: process.env.AUTH_SECRET,
+    trustHost: true,
     providers: [
         Google({
             clientId: process.env.GOOGLE_ID,
@@ -27,6 +28,11 @@ app.use('*', initAuthConfig((c) => ({
         }),
     ],
     adapter: DrizzleAdapter(db),
+    callbacks: {
+        async redirect({ url, baseUrl }) {
+            return 'http://localhost:5173'
+        }
+    }
 })))
 
 app.use('/api/auth/*', authHandler())
