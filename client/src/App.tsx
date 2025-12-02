@@ -11,6 +11,7 @@ import { ChannelList } from "./components/views/channels/ChannelList";
 import { ChannelView } from "./components/views/channels/ChannelView";
 import { LoginSignupView } from "./components/views/LoginSignupView";
 import { ProfileView } from "./components/views/ProfileView";
+import { BudgetView } from "./components/views/BudgetView";
 import { UserMenu } from "./components/ui/UserMenu";
 import { useAppStore } from "./store/useAppStore";
 import "./App.css";
@@ -79,6 +80,11 @@ function App() {
                 <Route path="/messages" element={
                   <PageWrapper>
                     <GroupChatView />
+                  </PageWrapper>
+                } />
+                <Route path="/budget" element={
+                  <PageWrapper>
+                    <BudgetView />
                   </PageWrapper>
                 } />
                 <Route path="/channels" element={
