@@ -14,15 +14,25 @@ import { useAppStore } from "./store/useAppStore";
 import "./App.css";
 
 function App() {
-  const { isAuthenticated } = useAppStore();
+  const { isAuthenticated, login } = useAppStore();
   const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
 
   useEffect(() => {
-    // Fake loading time
-    const timer = setTimeout(() => setIsLoading(false), 2500);
-    return () => clearTimeout(timer);
-  }, []);
+    const checkSession = async () => {
+      try {
+        const res = await fetch('http://localhost:3000/api/auth/session', { credentials: 'include' });
+        const session = await res.json();
+        if (session?.user?.name || session?.user?.email) {
+          login(session.user.name || session.user.email);
+        }
+      } catch (e) {
+        console.log('No session');
+      }
+      setTimeout(() => setIsLoading(false), 1500);
+    };
+    checkSession();
+  }, [login]);
 
   return (
     <div className="min-h-screen bg-[var(--color-paper)] text-[var(--color-ink)] overflow-hidden selection:bg-[var(--color-highlight)]">
