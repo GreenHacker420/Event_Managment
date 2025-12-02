@@ -4,6 +4,7 @@ import { useAppStore } from "../../store/useAppStore";
 import { Sparkles, Calendar, Users, CheckSquare, ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useSearchParams } from "react-router-dom";
+import { authApi, usersApi } from "../../lib/api";
 
 export const LoginSignupView = () => {
     const [isLogin, setIsLogin] = useState(true);
@@ -33,8 +34,7 @@ export const LoginSignupView = () => {
     }, [searchParams, setSearchParams]);
 
     useEffect(() => {
-        fetch("/api/auth/csrf", { credentials: 'include' })
-            .then(res => res.json())
+        authApi.getCsrfToken()
             .then(data => setCsrfToken(data.csrfToken))
             .catch(err => console.error("Failed to fetch CSRF token", err));
     }, []);
@@ -42,27 +42,28 @@ export const LoginSignupView = () => {
     const handleGoogleSignIn = () => {
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = '/api/auth/signin/google';
-        
+        const baseUrl = import.meta.env.VITE_API_URL || '';
+        form.action = `${baseUrl}/api/auth/signin/google`;
+
         const csrfInput = document.createElement('input');
         csrfInput.type = 'hidden';
         csrfInput.name = 'csrfToken';
         csrfInput.value = csrfToken;
         form.appendChild(csrfInput);
-        
+
         const callbackInput = document.createElement('input');
         callbackInput.type = 'hidden';
         callbackInput.name = 'callbackUrl';
         callbackInput.value = window.location.origin;
         form.appendChild(callbackInput);
-        
+
         document.body.appendChild(form);
         form.submit();
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (!email || !password) {
             toast.error("Please fill in all fields");
             return;
@@ -77,43 +78,27 @@ export const LoginSignupView = () => {
 
         try {
             if (isLogin) {
-                // Login with credentials - use signin endpoint
-                const res = await fetch("/api/auth/signin/credentials", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    body: new URLSearchParams({
-                        email,
-                        password,
-                        csrfToken,
-                        callbackUrl: window.location.origin,
-                        redirect: "false",
-                    }),
-                    credentials: "include",
+                // Login with credentials
+                const data = await authApi.signInCredentials({
+                    email,
+                    password,
+                    csrfToken,
+                    callbackUrl: window.location.origin,
+                    redirect: "false",
                 });
 
-                const data = await res.json();
-                
                 if (data.error) {
                     toast.error(data.error || "Invalid email or password");
-                } else if (data.url) {
-                    // Successful login - check session
-                    await checkSession();
-                    toast.success("Welcome back!");
                 } else {
+                    // Successful login - check session
                     await checkSession();
                     toast.success("Welcome back!");
                 }
             } else {
                 // Register new user
-                const res = await fetch("/api/users/register", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ name, email, password }),
-                });
+                const data = await usersApi.register({ name, email, password });
 
-                const data = await res.json();
-
-                if (res.ok) {
+                if (data.id) {
                     toast.success("Account created! Please sign in.");
                     setIsLogin(true);
                     setPassword("");
@@ -121,9 +106,11 @@ export const LoginSignupView = () => {
                     toast.error(data.error || "Registration failed");
                 }
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Auth error:", error);
-            toast.error("Something went wrong. Please try again.");
+            // Axios error handling
+            const errorMessage = error.response?.data?.error || error.message || "Something went wrong";
+            toast.error(errorMessage);
         } finally {
             setIsLoading(false);
         }

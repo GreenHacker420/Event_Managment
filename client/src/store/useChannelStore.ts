@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { channelsApi, subgroupsApi } from '../lib/api';
 
 export type Subgroup = {
     id: string;
@@ -35,11 +36,8 @@ export const useChannelStore = create<ChannelState>((set) => ({
 
     fetchChannels: async (eventId: string) => {
         try {
-            const response = await fetch(`/api/events/${eventId}/channels`);
-            if (response.ok) {
-                const data = await response.json();
-                set({ channels: data });
-            }
+            const data = await channelsApi.getAll(eventId);
+            set({ channels: data });
         } catch (error) {
             console.error("Failed to fetch channels", error);
         }
@@ -47,17 +45,10 @@ export const useChannelStore = create<ChannelState>((set) => ({
 
     addChannel: async (eventId: string, channel: any) => {
         try {
-            const response = await fetch(`/api/events/${eventId}/channels`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(channel)
-            });
-            if (response.ok) {
-                const data = await response.json();
-                set((state) => ({
-                    channels: [...state.channels, { ...data.channel, subgroups: [] }]
-                }));
-            }
+            const data = await channelsApi.create(eventId, channel);
+            set((state) => ({
+                channels: [...state.channels, { ...data.channel, subgroups: [] }]
+            }));
         } catch (error) {
             console.error("Failed to create channel", error);
         }
@@ -65,23 +56,14 @@ export const useChannelStore = create<ChannelState>((set) => ({
 
     addSubgroup: async (channelId: string, subgroup: any) => {
         try {
-            // Route: /api/events/channels/:channelId/subgroups
-            const response = await fetch(`/api/events/channels/${channelId}/subgroups`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(subgroup)
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                set((state) => ({
-                    channels: state.channels.map(ch =>
-                        ch.id === channelId
-                            ? { ...ch, subgroups: [...(ch.subgroups || []), data.subgroup] }
-                            : ch
-                    )
-                }));
-            }
+            const data = await subgroupsApi.create(channelId, subgroup);
+            set((state) => ({
+                channels: state.channels.map(ch =>
+                    ch.id === channelId
+                        ? { ...ch, subgroups: [...(ch.subgroups || []), data.subgroup] }
+                        : ch
+                )
+            }));
         } catch (error) {
             console.error("Failed to create subgroup", error);
         }

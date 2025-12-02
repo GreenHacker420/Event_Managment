@@ -24,8 +24,14 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173'
 
 // Middleware
 app.use('*', logger())
+
+const allowedOrigins = [FRONTEND_URL, 'http://localhost:5173', 'http://localhost:5000'];
+if (process.env.ALLOWED_ORIGINS) {
+    allowedOrigins.push(...process.env.ALLOWED_ORIGINS.split(','));
+}
+
 app.use('*', cors({
-    origin: [FRONTEND_URL, 'http://localhost:5173', 'http://localhost:5000'],
+    origin: allowedOrigins,
     credentials: true,
 }))
 
@@ -76,9 +82,9 @@ app.use('*', initAuthConfig(() => ({
                 try {
                     const email = user.email
                     if (!email) return false
-                    
+
                     const existingUsers = await db.select().from(schema.users).where(eq(schema.users.email, email))
-                    
+
                     if (existingUsers.length === 0) {
                         // Create new user
                         await db.insert(schema.users).values({
@@ -90,7 +96,7 @@ app.use('*', initAuthConfig(() => ({
                     } else {
                         // Update existing user with OAuth info
                         await db.update(schema.users)
-                            .set({ 
+                            .set({
                                 name: user.name || existingUsers[0].name,
                                 image: user.image || existingUsers[0].image,
                             })
@@ -154,7 +160,10 @@ const server = serve({ fetch: app.fetch, port: PORT })
 
 // WebSocket
 const io = new Server(server, {
-    cors: { origin: [FRONTEND_URL, 'http://localhost:5000'], credentials: true },
+    cors: {
+        origin: allowedOrigins,
+        credentials: true
+    },
 })
 setupSocketHandlers(io)
 

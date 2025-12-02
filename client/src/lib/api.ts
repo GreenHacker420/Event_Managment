@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const baseURL = import.meta.env.VITE_API_URL || '/api';
+
 const api = axios.create({
-    baseURL: '/api',
+    baseURL,
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
@@ -65,6 +67,14 @@ export const emailApi = {
     sendInvite: (data: any) => api.post('/email/invite', data).then((res) => res.data),
     sendTaskNotification: (data: any) => api.post('/email/task-assignment', data).then((res) => res.data),
     sendReminder: (data: any) => api.post('/email/reminder', data).then((res) => res.data),
+};
+
+export const authApi = {
+    getCsrfToken: () => api.get('/auth/csrf').then((res) => res.data),
+    getSession: () => api.get('/auth/session').then((res) => res.data),
+    signInCredentials: (credentials: any) => api.post('/auth/signin/credentials', credentials, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    }).then((res) => res.data),
 };
 
 export const usersApi = {
