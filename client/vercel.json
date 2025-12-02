@@ -5,7 +5,7 @@
     "rewrites": [
         {
             "source": "/api/:path*",
-            "destination": "https://your-backend-url.com/api/:path*"
+            "destination": "https://event-managment-sgg2.vercel.app/api/:path*"
         },
         {
             "source": "/(.*)",
