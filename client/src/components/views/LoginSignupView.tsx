@@ -204,6 +204,13 @@ export const LoginSignupView = () => {
                                     </svg>
                                     Continue with Google
                                 </button>
+                                <button 
+                                    type="button"
+                                    onClick={() => login('Guest')}
+                                    className="w-full mt-3 py-3 text-[var(--color-ink)]/60 font-hand hover:text-[var(--color-ink)] transition-colors"
+                                >
+                                    Continue as Guest →
+                                </button>
                             </div>
                         </div>
                     </div>
