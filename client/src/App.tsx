@@ -10,6 +10,7 @@ import { GroupChatView } from "./components/views/GroupChatView";
 import { ChannelList } from "./components/views/channels/ChannelList";
 import { ChannelView } from "./components/views/channels/ChannelView";
 import { LoginSignupView } from "./components/views/LoginSignupView";
+import { ProfileView } from "./components/views/ProfileView";
 import { UserMenu } from "./components/ui/UserMenu";
 import { useAppStore } from "./store/useAppStore";
 import "./App.css";
@@ -90,6 +91,11 @@ function App() {
                         <ChannelView />
                       </div>
                     </div>
+                  </PageWrapper>
+                } />
+                <Route path="/profile" element={
+                  <PageWrapper>
+                    <ProfileView />
                   </PageWrapper>
                 } />
 
