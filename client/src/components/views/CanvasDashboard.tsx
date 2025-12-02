@@ -2,8 +2,11 @@ import { motion } from "framer-motion";
 import { DashboardStats } from "./dashboard/DashboardStats";
 import { EventList } from "./dashboard/EventList";
 import { ActivityFeed } from "./dashboard/ActivityFeed";
+import { useAppStore } from "../../store/useAppStore";
 
 export const CanvasDashboard = () => {
+    const { user } = useAppStore();
+    
     return (
         <div className="relative w-full min-h-screen pb-32 px-8 pt-12 max-w-7xl mx-auto">
             {/* Header Section - Handwritten and Raw */}
@@ -20,7 +23,7 @@ export const CanvasDashboard = () => {
                         </svg>
                     </h1>
                     <p className="text-2xl font-hand text-[var(--color-ink)]/60 max-w-md leading-relaxed rotate-1 ml-4">
-                        Welcome back, Organizer. <br />
+                        Welcome back, {user?.name || 'Organizer'}! <br />
                         Your events are waiting.
                     </p>
                 </motion.div>
