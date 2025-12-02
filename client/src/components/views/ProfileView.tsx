@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Camera, ArrowLeft, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -18,18 +18,41 @@ export const ProfileView = () => {
     const [notifications, setNotifications] = useState(true);
     const [avatar, setAvatar] = useState<string | null>(user?.image || null);
     const [saving, setSaving] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const loadProfile = async () => {
+            try {
+                const profile = await usersApi.getMe();
+                if (profile) {
+                    setName(profile.name || "");
+                    setPhone(profile.phone || "");
+                    setLocation(profile.location || "");
+                    setBio(profile.bio || "");
+                    setRole(profile.role || "organizer");
+                    setAvatar(profile.image || null);
+                }
+            } catch (err) {
+                console.log("Could not load profile");
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadProfile();
+    }, []);
 
     const handleSave = async () => {
         if (!name.trim() || !user) return;
         
         setSaving(true);
         try {
-            await usersApi.updateMe({ name });
-            setUser({ ...user, name });
+            const res = await usersApi.updateMe({ name, phone, location, bio, role });
+            if (res.user) {
+                setUser({ ...user, ...res.user });
+            }
             toast.success("Profile updated!");
         } catch (error) {
-            setUser({ ...user, name });
-            toast.success("Profile updated locally!");
+            toast.error("Failed to save profile");
         } finally {
             setSaving(false);
         }

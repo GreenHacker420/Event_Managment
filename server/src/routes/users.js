@@ -56,7 +56,16 @@ users.get('/me', verifyAuth(), async (c) => {
         }
 
         const db = await getDb();
-        const user = await db.select().from(schema.users).where(eq(schema.users.email, auth.session.user.email));
+        const user = await db.select({
+            id: schema.users.id,
+            name: schema.users.name,
+            email: schema.users.email,
+            image: schema.users.image,
+            phone: schema.users.phone,
+            location: schema.users.location,
+            bio: schema.users.bio,
+            role: schema.users.role,
+        }).from(schema.users).where(eq(schema.users.email, auth.session.user.email));
         
         if (user.length === 0) {
             return c.json({ error: 'User not found' }, 404);
@@ -79,18 +88,30 @@ users.put('/me', verifyAuth(), async (c) => {
 
         const db = await getDb();
         const body = await c.req.json();
-        const { name, image } = body;
+        const { name, image, phone, location, bio, role } = body;
 
-        const updateData = {};
-        if (name) updateData.name = name;
-        if (image) updateData.image = image;
-        updateData.updatedAt = new Date();
+        const updateData = { updatedAt: new Date() };
+        if (name !== undefined) updateData.name = name;
+        if (image !== undefined) updateData.image = image;
+        if (phone !== undefined) updateData.phone = phone;
+        if (location !== undefined) updateData.location = location;
+        if (bio !== undefined) updateData.bio = bio;
+        if (role !== undefined) updateData.role = role;
 
         await db.update(schema.users)
             .set(updateData)
             .where(eq(schema.users.email, auth.session.user.email));
 
-        const updatedUser = await db.select().from(schema.users).where(eq(schema.users.email, auth.session.user.email));
+        const updatedUser = await db.select({
+            id: schema.users.id,
+            name: schema.users.name,
+            email: schema.users.email,
+            image: schema.users.image,
+            phone: schema.users.phone,
+            location: schema.users.location,
+            bio: schema.users.bio,
+            role: schema.users.role,
+        }).from(schema.users).where(eq(schema.users.email, auth.session.user.email));
         
         return c.json({ message: 'Profile updated', user: updatedUser[0] });
     } catch (error) {

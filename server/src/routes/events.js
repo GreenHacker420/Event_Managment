@@ -1,19 +1,21 @@
 import { Hono } from 'hono';
-import { verifyAuth } from '@hono/auth-js';
 import * as eventController from '../controllers/eventController.js';
 import * as channelController from '../controllers/channelController.js';
 import * as taskController from '../controllers/taskController.js';
 import * as expenseController from '../controllers/expenseController.js';
-import * as memberController from '../controllers/memberController.js';
 import * as activityController from '../controllers/activityController.js';
+import * as memberController from '../controllers/memberController.js';
 import * as messageController from '../controllers/messageController.js';
 
 const events = new Hono();
 
-// Public routes (read-only)
+// Events
 events.get('/', eventController.getEvents);
 events.get('/:id', eventController.getEvent);
 events.get('/:eventId/stats', eventController.getEventStats);
+events.post('/', eventController.createEvent);
+events.put('/:id', eventController.updateEvent);
+events.delete('/:id', eventController.deleteEvent);
 
 // Tasks
 events.get('/:eventId/tasks', taskController.getTasks);
@@ -27,7 +29,7 @@ events.post('/:eventId/channels', channelController.createChannel);
 events.put('/channels/:id', channelController.updateChannel);
 events.delete('/channels/:id', channelController.deleteChannel);
 
-// Subgroups - Fixed route: /api/events/channels/:channelId/subgroups
+// Subgroups
 events.post('/channels/:channelId/subgroups', channelController.createSubgroup);
 events.delete('/subgroups/:id', channelController.deleteSubgroup);
 
@@ -40,20 +42,15 @@ events.delete('/expenses/:id', expenseController.deleteExpense);
 // Activities
 events.get('/:eventId/activities', activityController.getActivities);
 
-// Messages (Chat)
-events.get('/:eventId/channels/:channelId/messages', messageController.getMessages);
-events.post('/:eventId/channels/:channelId/messages', messageController.createMessage);
-
-// Team Members
+// Members
 events.get('/:eventId/members', memberController.getMembers);
 events.post('/:eventId/members', memberController.addMember);
 events.put('/members/:id', memberController.updateMember);
 events.delete('/members/:id', memberController.removeMember);
 
-// Protected routes (require auth)
-events.use('/*', verifyAuth());
-events.post('/', eventController.createEvent);
-events.put('/:id', eventController.updateEvent);
-events.delete('/:id', eventController.deleteEvent);
+// Messages
+events.get('/:eventId/messages', messageController.getMessages);
+events.post('/:eventId/messages', messageController.createMessage);
+events.delete('/messages/:id', messageController.deleteMessage);
 
 export default events;

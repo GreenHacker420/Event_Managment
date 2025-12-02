@@ -40,19 +40,31 @@ export const createEvent = async (c) => {
             return c.json({ error: 'Title and Date are required' }, 400);
         }
 
-        
-        let organizerId = 'guest-user-id'; 
         const auth = c.get('authUser');
-        if (auth?.session?.user?.id) {
-            organizerId = auth.session.user.id;
-        } else if (auth?.session?.user?.email) {
-            const user = await db
+        let organizerId = null;
+
+        if (auth?.session?.user?.email) {
+            const existingUser = await db
                 .select({ id: schema.users.id })
                 .from(schema.users)
                 .where(eq(schema.users.email, auth.session.user.email));
-            if (user.length > 0) {
-                organizerId = user[0].id;
+
+            if (existingUser.length > 0) {
+                organizerId = existingUser[0].id;
+            } else {
+                const newUserId = crypto.randomUUID();
+                await db.insert(schema.users).values({
+                    id: newUserId,
+                    email: auth.session.user.email,
+                    name: auth.session.user.name || auth.session.user.email.split('@')[0],
+                    image: auth.session.user.image,
+                });
+                organizerId = newUserId;
             }
+        }
+
+        if (!organizerId) {
+            return c.json({ error: 'Authentication required to create events' }, 401);
         }
 
         const newEvent = {

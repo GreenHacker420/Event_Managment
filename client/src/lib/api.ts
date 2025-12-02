@@ -50,13 +50,20 @@ export const activitiesApi = {
 export const membersApi = {
     getAll: (eventId: string) => api.get(`/events/${eventId}/members`).then((res) => res.data),
     add: (eventId: string, data: any) => api.post(`/events/${eventId}/members`, data).then((res) => res.data),
-    update: (id: string, data: any) => api.put(`/events/members/${id}`, data).then((res) => res.data),
-    remove: (id: string) => api.delete(`/events/members/${id}`).then((res) => res.data),
+    update: (memberId: string, data: any) => api.put(`/events/members/${memberId}`, data).then((res) => res.data),
+    remove: (memberId: string) => api.delete(`/events/members/${memberId}`).then((res) => res.data),
 };
 
 export const messagesApi = {
-    getAll: (eventId: string, channelId: string) => api.get(`/events/${eventId}/channels/${channelId}/messages`).then((res) => res.data),
-    create: (eventId: string, channelId: string, data: any) => api.post(`/events/${eventId}/channels/${channelId}/messages`, data).then((res) => res.data),
+    getAll: (eventId: string, channelId?: string) => api.get(`/events/${eventId}/messages${channelId ? `?channelId=${channelId}` : ''}`).then((res) => res.data),
+    send: (eventId: string, data: any) => api.post(`/events/${eventId}/messages`, data).then((res) => res.data),
+    delete: (messageId: string) => api.delete(`/events/messages/${messageId}`).then((res) => res.data),
+};
+
+export const emailApi = {
+    sendInvite: (data: any) => api.post('/email/invite', data).then((res) => res.data),
+    sendTaskNotification: (data: any) => api.post('/email/task-assignment', data).then((res) => res.data),
+    sendReminder: (data: any) => api.post('/email/reminder', data).then((res) => res.data),
 };
 
 export const usersApi = {

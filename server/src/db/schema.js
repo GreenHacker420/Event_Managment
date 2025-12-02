@@ -2,10 +2,8 @@ import {
     int,
     timestamp,
     mysqlTable,
-    primaryKey,
     varchar,
     text,
-    boolean,
     datetime,
     decimal,
     mysqlEnum
@@ -17,39 +15,35 @@ export const users = mysqlTable("user", {
         .$defaultFn(() => crypto.randomUUID()),
     name: varchar("name", { length: 255 }),
     email: varchar("email", { length: 255 }).unique(),
-    emailVerified: timestamp("emailVerified", {
-        mode: "date",
-        fsp: 3,
-    }),
+    emailVerified: timestamp("emailVerified", { mode: "date", fsp: 3 }),
     image: varchar("image", { length: 255 }),
-    password: varchar("password", { length: 255 }), // Hashed password for email/password auth
+    password: varchar("password", { length: 255 }),
+    phone: varchar("phone", { length: 50 }),
+    location: varchar("location", { length: 255 }),
+    bio: text("bio"),
+    role: varchar("role", { length: 50 }),
     createdAt: timestamp("createdAt").defaultNow(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
 })
 
-export const accounts = mysqlTable(
-    "account",
-    {
-        userId: varchar("userId", { length: 255 })
-            .notNull()
-            .references(() => users.id, { onDelete: "cascade" }),
-        type: varchar("type", { length: 255 }).notNull(),
-        provider: varchar("provider", { length: 255 }).notNull(),
-        providerAccountId: varchar("providerAccountId", { length: 255 }).notNull(),
-        refresh_token: text("refresh_token"),
-        access_token: text("access_token"),
-        expires_at: int("expires_at"),
-        token_type: varchar("token_type", { length: 255 }),
-        scope: varchar("scope", { length: 255 }),
-        id_token: text("id_token"),
-        session_state: varchar("session_state", { length: 255 }),
-    },
-    (account) => ({
-        compoundKey: primaryKey({
-            columns: [account.provider, account.providerAccountId],
-        }),
-    })
-)
+export const accounts = mysqlTable("account", {
+    id: varchar("id", { length: 255 })
+        .primaryKey()
+        .$defaultFn(() => crypto.randomUUID()),
+    userId: varchar("userId", { length: 255 })
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+    type: varchar("type", { length: 255 }).notNull(),
+    provider: varchar("provider", { length: 255 }).notNull(),
+    providerAccountId: varchar("providerAccountId", { length: 255 }).notNull(),
+    refresh_token: text("refresh_token"),
+    access_token: text("access_token"),
+    expires_at: int("expires_at"),
+    token_type: varchar("token_type", { length: 255 }),
+    scope: varchar("scope", { length: 255 }),
+    id_token: text("id_token"),
+    session_state: varchar("session_state", { length: 255 }),
+})
 
 export const sessions = mysqlTable("session", {
     sessionToken: varchar("sessionToken", { length: 255 }).primaryKey(),
@@ -59,17 +53,14 @@ export const sessions = mysqlTable("session", {
     expires: timestamp("expires", { mode: "date" }).notNull(),
 })
 
-export const verificationTokens = mysqlTable(
-    "verificationToken",
-    {
-        identifier: varchar("identifier", { length: 255 }).notNull(),
-        token: varchar("token", { length: 255 }).notNull(),
-        expires: timestamp("expires", { mode: "date" }).notNull(),
-    },
-    (vt) => ({
-        compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
-    })
-)
+export const verificationTokens = mysqlTable("verificationToken", {
+    id: varchar("id", { length: 255 })
+        .primaryKey()
+        .$defaultFn(() => crypto.randomUUID()),
+    identifier: varchar("identifier", { length: 255 }).notNull(),
+    token: varchar("token", { length: 255 }).notNull(),
+    expires: timestamp("expires", { mode: "date" }).notNull(),
+})
 
 export const events = mysqlTable("event", {
     id: varchar("id", { length: 255 })

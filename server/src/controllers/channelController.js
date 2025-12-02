@@ -47,7 +47,9 @@ export const createChannel = async (c) => {
         }
 
         const db = await getDb();
+        const channelId = crypto.randomUUID();
         const newChannel = {
+            id: channelId,
             eventId,
             name,
             description: description || '',
@@ -118,7 +120,9 @@ export const createSubgroup = async (c) => {
         }
 
         const db = await getDb();
+        const subgroupId = crypto.randomUUID();
         const newSubgroup = {
+            id: subgroupId,
             channelId,
             name,
             members: members || 1,

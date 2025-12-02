@@ -1,72 +1,76 @@
+import { Hono } from 'hono';
+import { verifyAuth } from '@hono/auth-js';
 import { getDb, schema } from '../db/index.js';
-import { eq, and, desc, isNull } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 
-export const getMessages = async (c) => {
+const messages = new Hono();
+
+messages.get('/:eventId', async (c) => {
     const eventId = c.req.param('eventId');
     const channelId = c.req.query('channelId');
     
     try {
         const db = await getDb();
-        
-        let whereClause = eq(schema.messages.eventId, eventId);
-        if (channelId) {
-            whereClause = and(whereClause, eq(schema.messages.channelId, channelId));
-        }
-        
-        const messages = await db
+        let query = db
             .select({
                 id: schema.messages.id,
-                eventId: schema.messages.eventId,
-                channelId: schema.messages.channelId,
-                userId: schema.messages.userId,
                 content: schema.messages.content,
                 createdAt: schema.messages.createdAt,
+                userId: schema.messages.userId,
+                channelId: schema.messages.channelId,
                 userName: schema.users.name,
-                userEmail: schema.users.email,
                 userImage: schema.users.image,
             })
             .from(schema.messages)
             .leftJoin(schema.users, eq(schema.messages.userId, schema.users.id))
-            .where(whereClause)
+            .where(eq(schema.messages.eventId, eventId))
             .orderBy(desc(schema.messages.createdAt))
             .limit(100);
 
-        return c.json(messages.reverse());
+        const msgs = await query;
+        
+        const filtered = channelId 
+            ? msgs.filter(m => m.channelId === channelId)
+            : msgs;
+
+        return c.json(filtered.reverse());
     } catch (error) {
         console.error('Error fetching messages:', error);
         return c.json({ error: 'Failed to fetch messages' }, 500);
     }
-};
+});
 
-export const createMessage = async (c) => {
+messages.post('/:eventId', verifyAuth(), async (c) => {
     const eventId = c.req.param('eventId');
-    
     try {
-        const body = await c.req.json();
-        const { content, channelId } = body;
+        const auth = c.get('authUser');
+        if (!auth?.session?.user?.email) {
+            return c.json({ error: 'Unauthorized' }, 401);
+        }
 
-        if (!content || !content.trim()) {
+        const db = await getDb();
+        const { content, channelId } = await c.req.json();
+
+        if (!content?.trim()) {
             return c.json({ error: 'Message content is required' }, 400);
         }
 
-        let userId = null;
-        const auth = c.get('authUser');
-        if (auth?.session?.user?.email) {
-            const db = await getDb();
-            const user = await db.select().from(schema.users).where(eq(schema.users.email, auth.session.user.email));
+        let userId = auth.session.user.id;
+        if (!userId) {
+            const user = await db
+                .select({ id: schema.users.id })
+                .from(schema.users)
+                .where(eq(schema.users.email, auth.session.user.email));
             if (user.length > 0) {
                 userId = user[0].id;
             }
         }
 
         if (!userId) {
-            return c.json({ error: 'User not authenticated' }, 401);
+            return c.json({ error: 'User not found' }, 404);
         }
 
-        const db = await getDb();
-        const messageId = crypto.randomUUID();
         const newMessage = {
-            id: messageId,
             eventId,
             channelId: channelId || null,
             userId,
@@ -75,31 +79,31 @@ export const createMessage = async (c) => {
 
         await db.insert(schema.messages).values(newMessage);
 
-        const user = await db.select().from(schema.users).where(eq(schema.users.id, userId));
-
         return c.json({ 
-            message: 'Message sent', 
+            message: 'Message sent',
             data: {
                 ...newMessage,
-                userName: user[0]?.name,
-                userImage: user[0]?.image,
+                userName: auth.session.user.name,
+                userImage: auth.session.user.image,
                 createdAt: new Date(),
             }
         }, 201);
     } catch (error) {
-        console.error('Error creating message:', error);
+        console.error('Error sending message:', error);
         return c.json({ error: 'Failed to send message' }, 500);
     }
-};
+});
 
-export const deleteMessage = async (c) => {
-    const id = c.req.param('id');
+messages.delete('/:eventId/:messageId', verifyAuth(), async (c) => {
+    const { messageId } = c.req.param();
     try {
         const db = await getDb();
-        await db.delete(schema.messages).where(eq(schema.messages.id, id));
+        await db.delete(schema.messages).where(eq(schema.messages.id, messageId));
         return c.json({ message: 'Message deleted' });
     } catch (error) {
         console.error('Error deleting message:', error);
         return c.json({ error: 'Failed to delete message' }, 500);
     }
-};
+});
+
+export default messages;

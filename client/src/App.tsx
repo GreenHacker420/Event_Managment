@@ -12,6 +12,7 @@ import { ChannelView } from "./components/views/channels/ChannelView";
 import { LoginSignupView } from "./components/views/LoginSignupView";
 import { ProfileView } from "./components/views/ProfileView";
 import { ExpenseView } from "./components/views/ExpenseView";
+import { TeamView } from "./components/views/TeamView";
 import { UserMenu } from "./components/ui/UserMenu";
 import { useAppStore } from "./store/useAppStore";
 import "./App.css";
@@ -77,6 +78,11 @@ function App() {
                 <Route path="/expenses" element={
                   <PageWrapper>
                     <ExpenseView />
+                  </PageWrapper>
+                } />
+                <Route path="/team" element={
+                  <PageWrapper>
+                    <TeamView />
                   </PageWrapper>
                 } />
                 <Route path="/events/:eventId/channels" element={

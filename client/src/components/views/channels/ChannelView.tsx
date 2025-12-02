@@ -1,20 +1,61 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useChannelStore } from "../../../store/useChannelStore";
-import { Users, Hash, CheckSquare, X, Plus } from "lucide-react";
-import { useState } from "react";
+import { useAppStore } from "../../../store/useAppStore";
+import { Users, Hash, CheckSquare, X, Plus, UserPlus, ArrowLeft } from "lucide-react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { tasksApi, membersApi } from "../../../lib/api";
+import { Modal } from "../../ui/Modal";
+import { Button } from "../../ui/Button";
 
 export const ChannelView = () => {
     const { channels, activeChannelId, activeSubgroupId, setActiveSubgroup, addSubgroup } = useChannelStore();
+    const { activeEventId } = useAppStore();
     const activeChannel = channels.find(c => c.id === activeChannelId);
+    const activeSubgroup = activeChannel?.subgroups.find(s => s.id === activeSubgroupId);
+    const queryClient = useQueryClient();
 
     const [showSubgroupModal, setShowSubgroupModal] = useState(false);
     const [showTaskModal, setShowTaskModal] = useState(false);
+    const [showAssignModal, setShowAssignModal] = useState(false);
     const [subgroupName, setSubgroupName] = useState("");
     const [subgroupMembers, setSubgroupMembers] = useState(1);
     const [taskTitle, setTaskTitle] = useState("");
     const [taskDesc, setTaskDesc] = useState("");
-    const [tasks, setTasks] = useState<Record<string, { id: string; title: string; description: string; done: boolean }[]>>({});
+    const [assigneeId, setAssigneeId] = useState("");
+
+    const { data: allTasks = [] } = useQuery({
+        queryKey: ['tasks', activeEventId],
+        queryFn: () => activeEventId ? tasksApi.getAll(activeEventId) : Promise.resolve([]),
+        enabled: !!activeEventId,
+    });
+
+    const { data: allMembers = [] } = useQuery({
+        queryKey: ['members', activeEventId],
+        queryFn: () => activeEventId ? membersApi.getAll(activeEventId) : Promise.resolve([]),
+        enabled: !!activeEventId,
+    });
+
+    const channelTasks = allTasks.filter((t: any) => t.channelId === activeChannelId);
+    const channelMembers = allMembers.filter((m: any) => m.channelId === activeChannelId || !m.channelId);
+
+    const createTaskMutation = useMutation({
+        mutationFn: (data: any) => tasksApi.create(activeEventId!, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['tasks', activeEventId] });
+            toast.success("Task created!");
+            setTaskTitle("");
+            setTaskDesc("");
+            setShowTaskModal(false);
+        },
+        onError: () => toast.error("Failed to create task"),
+    });
+
+    const updateTaskMutation = useMutation({
+        mutationFn: ({ id, data }: { id: string; data: any }) => tasksApi.update(id, data),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks', activeEventId] }),
+    });
 
     const handleAddSubgroup = () => {
         if (!subgroupName.trim()) {
@@ -34,40 +75,35 @@ export const ChannelView = () => {
     };
 
     const handleCreateTask = () => {
-        if (!taskTitle.trim()) {
+        if (!taskTitle.trim() || !activeEventId || !activeChannelId) {
             toast.error("Task title is required");
             return;
         }
-        if (!activeSubgroupId) return;
 
-        const newTask = {
-            id: Date.now().toString(),
+        createTaskMutation.mutate({
             title: taskTitle,
             description: taskDesc,
-            done: false,
-        };
-
-        setTasks(prev => ({
-            ...prev,
-            [activeSubgroupId]: [...(prev[activeSubgroupId] || []), newTask]
-        }));
-        toast.success("Task created!");
-        setTaskTitle("");
-        setTaskDesc("");
-        setShowTaskModal(false);
+            channelId: activeChannelId,
+            assigneeId: assigneeId || null,
+        });
     };
 
-    const toggleTask = (taskId: string) => {
-        if (!activeSubgroupId) return;
-        setTasks(prev => ({
-            ...prev,
-            [activeSubgroupId]: prev[activeSubgroupId]?.map(t =>
-                t.id === taskId ? { ...t, done: !t.done } : t
-            ) || []
-        }));
+    const handleKeyDown = (e: React.KeyboardEvent, action: () => void) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            action();
+        }
+        if (e.key === 'Escape') {
+            setShowSubgroupModal(false);
+            setShowTaskModal(false);
+            setShowAssignModal(false);
+        }
     };
 
-    const currentTasks = activeSubgroupId ? (tasks[activeSubgroupId] || []) : [];
+    const toggleTask = (taskId: string, currentStatus: string) => {
+        const newStatus = currentStatus === 'done' ? 'todo' : 'done';
+        updateTaskMutation.mutate({ id: taskId, data: { status: newStatus } });
+    };
 
     if (!activeChannel) {
         return (
@@ -106,7 +142,7 @@ export const ChannelView = () => {
                             {activeChannel.subgroups.map((subgroup) => (
                                 <motion.div
                                     key={subgroup.id}
-                                    onClick={() => setActiveSubgroup(subgroup.id)}
+                                    onClick={() => setActiveSubgroup(activeSubgroupId === subgroup.id ? null : subgroup.id)}
                                     className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${activeSubgroupId === subgroup.id
                                         ? "bg-[var(--color-ink)] text-[var(--color-paper)] border-[var(--color-ink)]"
                                         : "bg-white text-[var(--color-ink)] border-[var(--color-ink)]/10 hover:border-[var(--color-ink)]"
@@ -129,6 +165,56 @@ export const ChannelView = () => {
                                 + Add Subgroup
                             </button>
                         </div>
+
+                        {/* Subgroup Detail Panel */}
+                        <AnimatePresence>
+                            {activeSubgroup && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="bg-[var(--color-surface)] rounded-xl p-4 border-2 border-[var(--color-ink)]"
+                                >
+                                    <h4 className="font-serif font-bold text-lg mb-3">{activeSubgroup.name} Details</h4>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="font-hand text-[var(--color-ink)]/60">Members</span>
+                                            <span className="font-bold">{activeSubgroup.members}</span>
+                                        </div>
+                                        <div className="border-t border-[var(--color-ink)]/10 pt-3">
+                                            <p className="font-hand text-sm text-[var(--color-ink)]/60 mb-2">Team Members</p>
+                                            {channelMembers.length === 0 ? (
+                                                <p className="text-sm text-[var(--color-ink)]/40">No members assigned</p>
+                                            ) : (
+                                                <div className="space-y-2">
+                                                    {channelMembers.slice(0, 3).map((m: any) => (
+                                                        <div key={m.id} className="flex items-center gap-2">
+                                                            {m.userImage ? (
+                                                                <img src={m.userImage} alt="" className="w-6 h-6 rounded-full" />
+                                                            ) : (
+                                                                <div className="w-6 h-6 rounded-full bg-[var(--color-accent)] flex items-center justify-center text-xs font-bold">
+                                                                    {m.userName?.[0] || "?"}
+                                                                </div>
+                                                            )}
+                                                            <span className="text-sm">{m.userName || m.userEmail}</span>
+                                                        </div>
+                                                    ))}
+                                                    {channelMembers.length > 3 && (
+                                                        <p className="text-xs text-[var(--color-ink)]/40">+{channelMembers.length - 3} more</p>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <button
+                                            onClick={() => setShowAssignModal(true)}
+                                            className="w-full mt-2 py-2 text-sm font-hand border border-[var(--color-ink)]/20 rounded-lg hover:border-[var(--color-ink)] transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            <UserPlus size={14} /> Assign Member
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
 
                     {/* Tasks/Content Column */}
@@ -137,63 +223,49 @@ export const ChannelView = () => {
                             <h3 className="font-serif text-2xl font-bold text-[var(--color-ink)] flex items-center gap-2">
                                 <CheckSquare size={24} /> Active Tasks
                             </h3>
-                            {activeSubgroupId && (
-                                <button
-                                    onClick={() => setShowTaskModal(true)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-[var(--color-accent)] text-[var(--color-ink)] font-hand rounded-full border-2 border-[var(--color-ink)] hover:shadow-[2px_2px_0px_var(--color-ink)] transition-all"
-                                >
-                                    <Plus size={16} /> Add Task
-                                </button>
-                            )}
+                            <button
+                                onClick={() => setShowTaskModal(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-[var(--color-accent)] text-[var(--color-ink)] font-hand rounded-full border-2 border-[var(--color-ink)] hover:shadow-[2px_2px_0px_var(--color-ink)] transition-all"
+                            >
+                                <Plus size={16} /> Add Task
+                            </button>
                         </div>
 
                         <div className="bg-[var(--color-surface)] rounded-2xl p-8 border-2 border-[var(--color-ink)] shadow-[8px_8px_0px_rgba(0,0,0,0.05)] min-h-[400px]">
-                            {activeSubgroupId ? (
-                                <div>
-                                    <p className="font-hand text-lg text-[var(--color-ink)]/60 mb-6">
-                                        Tasks for <span className="font-bold text-[var(--color-ink)]">
-                                            {activeChannel.subgroups.find(s => s.id === activeSubgroupId)?.name}
-                                        </span>
-                                    </p>
+                            <p className="font-hand text-lg text-[var(--color-ink)]/60 mb-6">
+                                Tasks for this channel
+                            </p>
 
-                                    {currentTasks.length === 0 ? (
-                                        <div className="text-center py-12">
-                                            <p className="font-hand text-xl text-[var(--color-ink)]/40 mb-4">No tasks yet</p>
-                                            <button
-                                                onClick={() => setShowTaskModal(true)}
-                                                className="px-6 py-3 bg-[var(--color-ink)] text-[var(--color-paper)] font-bold rounded-full hover:scale-105 transition-transform"
-                                            >
-                                                Create First Task
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-3">
-                                            {currentTasks.map((task) => (
-                                                <motion.div
-                                                    key={task.id}
-                                                    className="flex items-center gap-4 p-4 bg-white rounded-xl border-2 border-[var(--color-ink)]/10 hover:border-[var(--color-ink)]/30 transition-colors"
-                                                    whileHover={{ x: 5 }}
-                                                >
-                                                    <div
-                                                        onClick={() => toggleTask(task.id)}
-                                                        className={`w-6 h-6 border-2 border-[var(--color-ink)] rounded cursor-pointer flex items-center justify-center ${task.done ? 'bg-[var(--color-accent)]' : 'bg-white'}`}
-                                                    >
-                                                        {task.done && <CheckSquare size={14} />}
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <p className={`font-serif font-bold ${task.done ? 'line-through opacity-50' : ''}`}>{task.title}</p>
-                                                        {task.description && <p className="font-hand text-sm text-[var(--color-ink)]/50">{task.description}</p>}
-                                                    </div>
-                                                </motion.div>
-                                            ))}
-                                        </div>
-                                    )}
+                            {channelTasks.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <p className="font-hand text-xl text-[var(--color-ink)]/40 mb-4">No tasks yet</p>
+                                    <button
+                                        onClick={() => setShowTaskModal(true)}
+                                        className="px-6 py-3 bg-[var(--color-ink)] text-[var(--color-paper)] font-bold rounded-full hover:scale-105 transition-transform"
+                                    >
+                                        Create First Task
+                                    </button>
                                 </div>
                             ) : (
-                                <div className="h-full flex items-center justify-center min-h-[300px]">
-                                    <p className="font-hand text-xl text-[var(--color-ink)]/40">
-                                        Select a subgroup to view tasks.
-                                    </p>
+                                <div className="space-y-3">
+                                    {channelTasks.map((task: any) => (
+                                        <motion.div
+                                            key={task.id}
+                                            className="flex items-center gap-4 p-4 bg-white rounded-xl border-2 border-[var(--color-ink)]/10 hover:border-[var(--color-ink)]/30 transition-colors"
+                                            whileHover={{ x: 5 }}
+                                        >
+                                            <div
+                                                onClick={() => toggleTask(task.id, task.status)}
+                                                className={`w-6 h-6 border-2 border-[var(--color-ink)] rounded cursor-pointer flex items-center justify-center ${task.status === 'done' ? 'bg-[var(--color-accent)]' : 'bg-white'}`}
+                                            >
+                                                {task.status === 'done' && <CheckSquare size={14} />}
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className={`font-serif font-bold ${task.status === 'done' ? 'line-through opacity-50' : ''}`}>{task.title}</p>
+                                                {task.description && <p className="font-hand text-sm text-[var(--color-ink)]/50">{task.description}</p>}
+                                            </div>
+                                        </motion.div>
+                                    ))}
                                 </div>
                             )}
                         </div>

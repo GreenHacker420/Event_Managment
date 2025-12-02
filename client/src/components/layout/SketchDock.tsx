@@ -6,6 +6,7 @@ import {
     MessageSquare,
     Hash,
     CircleDollarSign,
+    Users,
 } from "lucide-react";
 import { useAppStore } from "../../store/useAppStore";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -17,8 +18,8 @@ export const SketchDock = () => {
     const location = useLocation();
 
     const handleNavigation = (path: string, id: string) => {
-        if (id === "channels" && !activeEventId) {
-            toast.info("Select an event first to view channels");
+        if ((id === "channels" || id === "team") && !activeEventId) {
+            toast.info("Select an event first");
             navigate("/");
             return;
         }
@@ -30,7 +31,8 @@ export const SketchDock = () => {
         { id: "create-event", path: "/create", icon: PenTool, label: "Draft" },
         { id: "tasks", path: "/tasks", icon: CheckSquare, label: "To-Dos" },
         { id: "expenses", path: "/expenses", icon: CircleDollarSign, label: "Budget" },
-        { id: "messages", path: "/messages", icon: MessageSquare, label: "Notes" },
+        { id: "team", path: "/team", icon: Users, label: "Team" },
+        { id: "messages", path: "/messages", icon: MessageSquare, label: "Chat" },
         { id: "channels", path: activeEventId ? `/events/${activeEventId}/channels` : "/", icon: Hash, label: "Channels" },
     ];
 
