@@ -15,7 +15,10 @@ const app = new Hono()
 const db = await getDb()
 
 app.use('*', logger())
-app.use('*', cors())
+app.use('*', cors({
+    origin: 'http://localhost:5000',
+    credentials: true,
+}))
 
 // Auth.js Configuration
 app.use('*', initAuthConfig((c) => ({
