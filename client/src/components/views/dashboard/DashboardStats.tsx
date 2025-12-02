@@ -1,11 +1,37 @@
 import { motion } from "framer-motion";
 import { PieChart, TrendingUp, DollarSign } from "lucide-react";
-import { useBudgetStore } from "../../../store/useBudgetStore";
+import { useQuery } from "@tanstack/react-query";
+import { eventsApi, tasksApi, expensesApi } from "../../../lib/api";
+import { useAppStore } from "../../../store/useAppStore";
 
 export const DashboardStats = () => {
-    const { totalBudget, expenses } = useBudgetStore();
-    const totalSpent = expenses.reduce((acc, curr) => acc + curr.amount, 0);
-    const utilization = Math.min((totalSpent / totalBudget) * 100, 100);
+    const { activeEventId } = useAppStore();
+
+    const { data: events = [] } = useQuery({
+        queryKey: ['events'],
+        queryFn: eventsApi.getAll,
+    });
+
+    const { data: tasks = [] } = useQuery({
+        queryKey: ['tasks', activeEventId],
+        queryFn: () => activeEventId ? tasksApi.getAll(activeEventId) : Promise.resolve([]),
+        enabled: !!activeEventId,
+    });
+
+    const { data: expenses = [] } = useQuery({
+        queryKey: ['expenses', activeEventId],
+        queryFn: () => activeEventId ? expensesApi.getAll(activeEventId) : Promise.resolve([]),
+        enabled: !!activeEventId,
+    });
+
+    const activeEvent = events.find((e: any) => e.id === activeEventId);
+    const totalBudget = Number(activeEvent?.budget) || 10000;
+    const totalSpent = expenses.reduce((acc: number, curr: any) => acc + Number(curr.amount || 0), 0);
+    const utilization = totalBudget > 0 ? Math.min((totalSpent / totalBudget) * 100, 100) : 0;
+
+    const completedTasks = tasks.filter((t: any) => t.status === 'done').length;
+    const totalTasks = tasks.length || 1;
+    const taskProgress = (completedTasks / totalTasks) * 100;
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
@@ -54,14 +80,14 @@ export const DashboardStats = () => {
                             fill="none"
                             strokeDasharray="251.2"
                             initial={{ strokeDashoffset: 251.2 }}
-                            animate={{ strokeDashoffset: 251.2 * 0.2 }} // 80% complete
+                            animate={{ strokeDashoffset: 251.2 * (1 - taskProgress / 100) }}
                             transition={{ duration: 1.5, ease: "easeOut" }}
                             strokeLinecap="round"
                         />
                     </svg>
                 </div>
                 <div className="text-center mt-[-1rem]">
-                    <span className="font-hand text-2xl font-bold">24/30</span>
+                    <span className="font-hand text-2xl font-bold">{completedTasks}/{tasks.length}</span>
                 </div>
             </motion.div>
 

@@ -58,12 +58,15 @@ export const createTask = async (c) => {
 
         await db.insert(schema.tasks).values(newTask);
 
-        // Log activity
-        await db.insert(schema.activities).values({
-            eventId,
-            type: 'task_created',
-            description: `Task "${title}" was created`,
-        });
+        try {
+            await db.insert(schema.activities).values({
+                eventId,
+                type: 'task_created',
+                description: `Task "${title}" was created`,
+            });
+        } catch (e) {
+            console.log(e);
+        }
 
         return c.json({ message: 'Task created', task: newTask }, 201);
     } catch (error) {
@@ -91,13 +94,14 @@ export const updateTask = async (c) => {
 
         await db.update(schema.tasks).set(updateData).where(eq(schema.tasks.id, id));
 
-        // Log activity if status changed to done
         if (currentTask.length > 0 && body.status === 'done' && currentTask[0].status !== 'done') {
-            await db.insert(schema.activities).values({
-                eventId: currentTask[0].eventId,
-                type: 'task_completed',
-                description: `Task "${currentTask[0].title}" was completed`,
-            });
+            try {
+                await db.insert(schema.activities).values({
+                    eventId: currentTask[0].eventId,
+                    type: 'task_completed',
+                    description: `Task "${currentTask[0].title}" was completed`,
+                });
+            } catch (e) {}
         }
 
         return c.json({ message: 'Task updated' });

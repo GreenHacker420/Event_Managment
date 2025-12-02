@@ -43,8 +43,13 @@ export const createEvent = async (c) => {
         
         let organizerId = 'guest-user-id'; 
         const auth = c.get('authUser');
-        if (auth?.session?.user?.email) {
-            const user = await db.select().from(schema.users).where(eq(schema.users.email, auth.session.user.email));
+        if (auth?.session?.user?.id) {
+            organizerId = auth.session.user.id;
+        } else if (auth?.session?.user?.email) {
+            const user = await db
+                .select({ id: schema.users.id })
+                .from(schema.users)
+                .where(eq(schema.users.email, auth.session.user.email));
             if (user.length > 0) {
                 organizerId = user[0].id;
             }
@@ -87,10 +92,8 @@ export const updateEvent = async (c) => {
             return c.json({ error: 'Event not found' }, 404);
         }
 
-        // Get user id
-        const userEmail = auth.session.user.email;
-        const user = await db.select().from(schema.users).where(eq(schema.users.email, userEmail));
-        if (user.length === 0 || user[0].id !== event[0].organizerId) {
+        const userId = auth.session.user.id;
+        if (!userId || userId !== event[0].organizerId) {
             return c.json({ error: 'Unauthorized' }, 403);
         }
 
@@ -131,9 +134,8 @@ export const deleteEvent = async (c) => {
             return c.json({ error: 'Event not found' }, 404);
         }
 
-        const userEmail = auth.session.user.email;
-        const user = await db.select().from(schema.users).where(eq(schema.users.email, userEmail));
-        if (user.length === 0 || user[0].id !== event[0].organizerId) {
+        const userId = auth.session.user.id;
+        if (!userId || userId !== event[0].organizerId) {
             return c.json({ error: 'Unauthorized' }, 403);
         }
 
@@ -185,11 +187,13 @@ export const getEventStats = async (c) => {
             .from(schema.channels)
             .where(eq(schema.channels.eventId, eventId));
 
-        // Get member count
-        const memberCount = await db
-            .select({ count: sql`COUNT(*)` })
-            .from(schema.eventMembers)
-            .where(eq(schema.eventMembers.eventId, eventId));
+        let memberCount = [{ count: 0 }];
+        try {
+            memberCount = await db
+                .select({ count: sql`COUNT(*)` })
+                .from(schema.eventMembers)
+                .where(eq(schema.eventMembers.eventId, eventId));
+        } catch (e) {}
 
         const totalTasks = Number(taskStats[0]?.total) || 0;
         const completedTasks = Number(taskStats[0]?.completed) || 0;

@@ -57,12 +57,15 @@ export const createChannel = async (c) => {
 
         await db.insert(schema.channels).values(newChannel);
 
-        // Log activity
-        await db.insert(schema.activities).values({
-            eventId,
-            type: 'channel_created',
-            description: `Channel "${name}" was created`,
-        });
+        try {
+            await db.insert(schema.activities).values({
+                eventId,
+                type: 'channel_created',
+                description: `Channel "${name}" was created`,
+            });
+        } catch (e) {
+            console.log(e);
+        }
 
         return c.json({ message: 'Channel created', channel: { ...newChannel, subgroups: [] } }, 201);
     } catch (error) {

@@ -36,13 +36,16 @@ export const createExpense = async (c) => {
 
         await db.insert(schema.expenses).values(newExpense);
 
-        // Log activity
-        await db.insert(schema.activities).values({
-            eventId,
-            type: 'expense_added',
-            description: `Expense "${description}" ($${amount}) was added`,
-            metadata: JSON.stringify({ amount, category }),
-        });
+        try {
+            await db.insert(schema.activities).values({
+                eventId,
+                type: 'expense_added',
+                description: `Expense "${description}" ($${amount}) was added`,
+                metadata: JSON.stringify({ amount, category }),
+            });
+        } catch (e) {
+            console.log(e);
+        }
 
         return c.json({ message: 'Expense created', expense: newExpense }, 201);
     } catch (error) {
@@ -72,13 +75,14 @@ export const updateExpense = async (c) => {
 
         await db.update(schema.expenses).set(updateData).where(eq(schema.expenses.id, id));
 
-        // Log activity if status changed to approved
         if (currentExpense.length > 0 && status === 'approved' && currentExpense[0].status !== 'approved') {
-            await db.insert(schema.activities).values({
-                eventId: currentExpense[0].eventId,
-                type: 'expense_approved',
-                description: `Expense "${currentExpense[0].description}" was approved`,
-            });
+            try {
+                await db.insert(schema.activities).values({
+                    eventId: currentExpense[0].eventId,
+                    type: 'expense_approved',
+                    description: `Expense "${currentExpense[0].description}" was approved`,
+                });
+            } catch (e) {}
         }
 
         return c.json({ message: 'Expense updated' });

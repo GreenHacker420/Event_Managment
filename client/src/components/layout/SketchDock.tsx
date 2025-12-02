@@ -6,15 +6,24 @@ import {
     MessageSquare,
     Hash,
     CircleDollarSign,
-    Users
 } from "lucide-react";
 import { useAppStore } from "../../store/useAppStore";
 import { useNavigate, useLocation } from "react-router-dom";
+import { toast } from "sonner";
 
 export const SketchDock = () => {
     const { setCursorVariant, activeEventId } = useAppStore();
     const navigate = useNavigate();
     const location = useLocation();
+
+    const handleNavigation = (path: string, id: string) => {
+        if (id === "channels" && !activeEventId) {
+            toast.info("Select an event first to view channels");
+            navigate("/");
+            return;
+        }
+        navigate(path);
+    };
 
     const items = [
         { id: "dashboard", path: "/", icon: LayoutGrid, label: "The Desk" },
@@ -37,8 +46,8 @@ export const SketchDock = () => {
                     <DockItem
                         key={item.id}
                         item={item}
-                        isActive={location.pathname === item.path}
-                        onClick={() => navigate(item.path)}
+                        isActive={location.pathname === item.path || (item.id === "channels" && location.pathname.includes("/channels"))}
+                        onClick={() => handleNavigation(item.path, item.id)}
                         onHoverStart={() => setCursorVariant("hover")}
                         onHoverEnd={() => setCursorVariant("default")}
                     />

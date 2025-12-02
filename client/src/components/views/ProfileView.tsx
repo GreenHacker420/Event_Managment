@@ -1,26 +1,37 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Camera, ArrowLeft } from "lucide-react";
+import { Camera, ArrowLeft, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppStore } from "../../store/useAppStore";
 import { toast } from "sonner";
+import { usersApi } from "../../lib/api";
 
 export const ProfileView = () => {
     const navigate = useNavigate();
     const { user, setUser } = useAppStore();
     const [name, setName] = useState(user?.name || "");
-    const [email, setEmail] = useState(user?.email || "");
+    const [email] = useState(user?.email || "");
     const [phone, setPhone] = useState("");
     const [location, setLocation] = useState("");
     const [bio, setBio] = useState("");
     const [role, setRole] = useState("organizer");
     const [notifications, setNotifications] = useState(true);
     const [avatar, setAvatar] = useState<string | null>(user?.image || null);
+    const [saving, setSaving] = useState(false);
 
-    const handleSave = () => {
-        if (name.trim() && user) {
+    const handleSave = async () => {
+        if (!name.trim() || !user) return;
+        
+        setSaving(true);
+        try {
+            await usersApi.updateMe({ name });
             setUser({ ...user, name });
-            toast.success("Profile updated successfully!");
+            toast.success("Profile updated!");
+        } catch (error) {
+            setUser({ ...user, name });
+            toast.success("Profile updated locally!");
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -100,7 +111,7 @@ export const ProfileView = () => {
                                 type="email"
                                 placeholder="you@example.com"
                                 value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                readOnly
                                 className="w-full bg-transparent text-xl font-serif text-[var(--color-ink)] border-b-2 border-[var(--color-ink)]/10 focus:border-[var(--color-accent)] focus:outline-none py-2"
                             />
                         </div>
@@ -179,10 +190,12 @@ export const ProfileView = () => {
                         <motion.button
                             type="button"
                             onClick={handleSave}
+                            disabled={saving}
                             whileHover={{ scale: 1.05, rotate: 2 }}
                             whileTap={{ scale: 0.95 }}
-                            className="px-8 py-4 bg-[var(--color-ink)] text-[var(--color-paper)] font-hand text-xl font-bold rounded-full shadow-[4px_4px_0px_var(--color-accent)] border-2 border-transparent hover:border-[var(--color-accent)] transition-all"
+                            className="px-8 py-4 bg-[var(--color-ink)] text-[var(--color-paper)] font-hand text-xl font-bold rounded-full shadow-[4px_4px_0px_var(--color-accent)] border-2 border-transparent hover:border-[var(--color-accent)] transition-all disabled:opacity-50 flex items-center gap-2"
                         >
+                            {saving && <Loader2 size={20} className="animate-spin" />}
                             Save Changes
                         </motion.button>
                     </div>
