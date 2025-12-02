@@ -10,6 +10,7 @@ import { GroupChatView } from "./components/views/GroupChatView";
 import { ChannelList } from "./components/views/channels/ChannelList";
 import { ChannelView } from "./components/views/channels/ChannelView";
 import { LoginSignupView } from "./components/views/LoginSignupView";
+import { UserMenu } from "./components/ui/UserMenu";
 import { useAppStore } from "./store/useAppStore";
 import "./App.css";
 
@@ -53,6 +54,9 @@ function App() {
 
       {!isLoading && isAuthenticated && (
         <>
+          <div className="fixed top-4 right-4 z-50">
+            <UserMenu />
+          </div>
           <main className="relative w-full h-screen overflow-y-auto overflow-x-hidden">
             <AnimatePresence mode="wait">
               <Routes location={location} key={location.pathname}>
