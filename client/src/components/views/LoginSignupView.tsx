@@ -42,8 +42,9 @@ export const LoginSignupView = () => {
     const handleGoogleSignIn = () => {
         const form = document.createElement('form');
         form.method = 'POST';
-        const baseUrl = import.meta.env.VITE_API_URL || '';
-        form.action = `${baseUrl}/api/auth/signin/google`;
+        const apiUrl = import.meta.env.VITE_API_URL || '';
+        const baseUrl = apiUrl ? (apiUrl.endsWith('/api') ? apiUrl : `${apiUrl}/api`) : '/api';
+        form.action = `${baseUrl}/auth/signin/google`;
 
         const csrfInput = document.createElement('input');
         csrfInput.type = 'hidden';
