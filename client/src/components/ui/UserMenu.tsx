@@ -1,14 +1,21 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, LogOut, Settings } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useAppStore } from "../../store/useAppStore";
 
 export const UserMenu = () => {
+    const navigate = useNavigate();
     const { user, logout } = useAppStore();
     const [isOpen, setIsOpen] = useState(false);
 
     const handleSignOut = () => {
         logout();
+        setIsOpen(false);
+    };
+
+    const handleProfile = () => {
+        navigate("/profile");
         setIsOpen(false);
     };
 
@@ -36,7 +43,10 @@ export const UserMenu = () => {
                                 <p className="font-hand text-sm text-[var(--color-ink)]/60">Welcome back!</p>
                             </div>
                             <div className="p-2">
-                                <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[var(--color-surface)] transition-colors text-left">
+                                <button 
+                                    onClick={handleProfile}
+                                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[var(--color-surface)] transition-colors text-left"
+                                >
                                     <Settings size={18} />
                                     <span className="font-hand">Profile</span>
                                 </button>
