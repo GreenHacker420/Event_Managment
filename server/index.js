@@ -16,7 +16,7 @@ const db = await getDb()
 
 app.use('*', logger())
 app.use('*', cors({
-    origin: 'http://localhost:5000',
+    origin: ['http://localhost:5000', 'http://localhost:5173', 'http://localhost:3001'],
     credentials: true,
 }))
 
