@@ -4,8 +4,8 @@ import {
     PenTool,
     CheckSquare,
     MessageSquare,
-    Users,
-    Hash
+    Hash,
+    CircleDollarSign
 } from "lucide-react";
 import { useAppStore } from "../../store/useAppStore";
 import { useNavigate, useLocation } from "react-router-dom";
