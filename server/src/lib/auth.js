@@ -25,10 +25,12 @@ export const auth = betterAuth({
         google: {
             clientId: process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_ID || "",
             clientSecret: process.env.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_SECRET || "",
+            enabled: true,
         },
         github: {
             clientId: process.env.GITHUB_CLIENT_ID || process.env.GITHUB_ID || "",
             clientSecret: process.env.GITHUB_CLIENT_SECRET || process.env.GITHUB_SECRET || "",
+            enabled: true,
         },
     },
     secret: process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET,
@@ -37,6 +39,9 @@ export const auth = betterAuth({
         "http://localhost:5173",
         "http://localhost:5000",
         "http://localhost:3000",
+        // Production domains
+        "https://event-managment-rho.vercel.app",
+        "https://event-managment-sgg2.vercel.app",
     ],
     session: {
         expiresIn: 60 * 60 * 24 * 7, // 7 days
@@ -46,5 +51,8 @@ export const auth = betterAuth({
         crossSubDomainCookies: {
             enabled: false,
         },
+        cookiePrefix: "",
+        secureCookies: process.env.NODE_ENV === "production",
+        sameSite: "none",
     },
 });
