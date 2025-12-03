@@ -20,7 +20,14 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173'
 // Middleware
 app.use('*', logger())
 
-const allowedOrigins = [FRONTEND_URL, 'http://localhost:5173', 'http://localhost:5000'];
+const allowedOrigins = [
+    FRONTEND_URL, 
+    'http://localhost:5173', 
+    'http://localhost:5000',
+    'http://localhost:3000',
+    'https://event-managment-rho.vercel.app',
+    'https://event-managment-sgg2.vercel.app',
+];
 if (process.env.ALLOWED_ORIGINS) {
     allowedOrigins.push(...process.env.ALLOWED_ORIGINS.split(','));
 }
